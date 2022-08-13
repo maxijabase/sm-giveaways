@@ -1,5 +1,6 @@
 #include <sourcemod>
 #include <sdktools>
+#include <autoexecconfig>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -27,17 +28,26 @@ public Plugin myinfo = {
 
 public void OnPluginStart() {
 	
-	CreateConVar("sm_giveaways_version", PLUGIN_VERSION, "Standard plugin version ConVar. Please don't change me!", FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
+	AutoExecConfig_SetCreateFile(true);
+	AutoExecConfig_SetFile("giveaways");
 	
-	g_cvPlaySounds = CreateConVar("sm_giveaways_sounds", "1", "Play start, enter, and end sounds.");
-	g_cvGiveawayTime = CreateConVar("sm_giveaway_time", "60", "Amount of time before the giveaway entry time stops");
+	CreateConVar("sm_giveaways_version", PLUGIN_VERSION, "Standar plugin version ConVar. Please don't change me!", FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
 	
-	RegAdminCmd("sm_gstart", CMD_CreateGiveaway, ADMFLAG_ROOT);
+	g_cvPlaySounds = AutoExecConfig_CreateConVar("sm_giveaways_sounds", "1", "Play start, enter, and end sounds.");
+	g_cvGiveawayTime = AutoExecConfig_CreateConVar("sm_giveaways_time", "5", "Amount of time before the giveaway entry time stops");
+	
+	RegAdminCmd("sm_gstart", CMD_CreateGiveaway, ADMFLAG_ROOT, "Starts a giveaway.");
 	RegAdminCmd("sm_gstop", CMD_StopGiveaway, ADMFLAG_ROOT);
+	RegAdminCmd("sm_gcancel", CMD_StopGiveaway, ADMFLAG_ROOT);
 	
 	RegConsoleCmd("sm_enter", CMD_Enter);
 	
-	LoadTranslations("giveaways.phrases");
+	g_alParticipants = new ArrayList();
+	
+	//LoadTranslations("giveaways.phrases");
+	
+	AutoExecConfig_ExecuteFile();
+	AutoExecConfig_CleanFile();
 }
 
 public void OnMapStart() {
@@ -57,19 +67,19 @@ public Action CMD_CreateGiveaway(int client, int args) {
 		return Plugin_Handled;
 	}
 	
-	char arg1[32];
-	GetCmdArg(1, arg1, sizeof(arg1));
+	char arg[64];
+	GetCmdArgString(arg, sizeof(arg));
+	TrimString(arg);
 	
 	char message[512];
-	if (arg1[0] == '\0') {
-		Format(message, sizeof(message), "¡EMPEZÓ UN SORTEO! COMIENZA EN %i SEGUNDOS - ESCRIBÍ !enter PARA PARTICIPAR", g_cvGiveawayTime.FloatValue);
+	if (arg[0] == '\0') {
+		Format(message, sizeof(message), "¡EMPEZÓ UN SORTEO! COMIENZA EN %d SEGUNDOS - ESCRIBÍ !enter PARA PARTICIPAR", g_cvGiveawayTime.IntValue);
 	}
 	else {
-		Format(message, sizeof(message), "¡EMPEZÓ UN SORTEO! SE SORTEA UN/A %s\nCOMIENZA EN %i SEGUNDOS - ESCRIBÍ !enter PARA PARTICIPAR", arg1, g_cvGiveawayTime.FloatValue);
+		Format(message, sizeof(message), "¡EMPEZÓ UN SORTEO! SE SORTEA UN/A %s\nCOMIENZA EN %d SEGUNDOS - ESCRIBÍ !enter PARA PARTICIPAR", arg, g_cvGiveawayTime.IntValue);
 	}
 	
-	// Clear buffers
-	g_alParticipants = new ArrayList();
+	// Set buffers
 	g_bActiveGiveaway = true;
 	
 	// Send message
@@ -84,19 +94,38 @@ public Action CMD_CreateGiveaway(int client, int args) {
 }
 
 public Action TimerEndCallback(Handle timer) {
+	PrintToChatAll("timer called!");
 	if (g_bActiveGiveaway) {
 		CMD_StopGiveaway(0, 0);
 	}
-	delete timer;
 }
 
 public Action CMD_StopGiveaway(int client, int args) {
-	// Get winner
-	int winner = g_alParticipants.Get(GetRandomInt(0, g_alParticipants.Length) - 1);
-	int userid = GetClientOfUserId(winner);
+	// Check if there's an ongoing giveaway
+	if (!g_bActiveGiveaway) {
+		ReplyToCommand(client, "¡No hay sorteo para finalizar!");
+		return Plugin_Handled;
+	}
 	
-	// Announce winner
-	PrintCenterTextAll("¡EL GANADOR ES %N!", userid);
+	// Check if there are potential winners
+	if (g_alParticipants.Length == 0) {
+		PrintCenterTextAll("¡SIN GANADORES!");
+	}
+	else {
+		// Get winner
+		int random = g_alParticipants.Get(GetRandomInt(0, g_alParticipants.Length) - 1);
+		if (random == -1) {
+			random = 0;
+		}
+		int winner = GetClientOfUserId(random);
+		if (winner == 0) {
+			CMD_StopGiveaway(client, args);
+			return Plugin_Handled;
+		}
+		
+		// Announce winner
+		PrintCenterTextAll("¡EL GANADOR ES %N!", winner);
+	}
 	
 	// Play sound if enabled
 	PlaySound("giveaway_stop.wav");
@@ -112,6 +141,7 @@ public Action CMD_Enter(int client, int args) {
 	// Check for current giveaways
 	if (!g_bActiveGiveaway) {
 		ReplyToCommand(client, "¡No hay ningún sorteo en curso al cual entrar!");
+		return Plugin_Handled;
 	}
 	
 	// Check if he's already participating
