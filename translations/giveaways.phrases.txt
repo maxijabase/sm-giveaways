@@ -1,0 +1,61 @@
+"Phrases"
+{
+	"GiveawayStarting_Center"
+	{
+		"#format" "{1:d}"
+		"es" "¡EMPEZÓ UN SORTEO! COMIENZA EN {1} SEGUNDOS - ESCRIBÍ !enter PARA PARTICIPAR"
+	}
+	"GiveawayStarting_Center_Prize"
+	{
+		"#format" "{1:s},{2:d}"
+		"es" "¡EMPEZÓ UN SORTEO! SE SORTEA UN/A {1}\nCOMIENZA EN {2} SEGUNDOS - ESCRIBÍ !enter PARA PARTICIPAR"
+	}
+	"GiveawayStarting_Chat"
+	{
+		"#format" "{1:d}"
+		"es" "{yellow}[Sorteos] {orange}¡EMPEZÓ UN SORTEO!{default} Comienza en {orange}{1}{default} segundos. ¡Escribí {orange}!enter{default} para participar!"
+	}
+	"GiveawayStarting_Chat_Prize"
+	{
+		"#format" "{1:s},{2:d}"
+		"es" "{yellow}[Sorteos] {orange}¡EMPEZÓ UN SORTEO!{default} Se sortea un/a {azure}{1}{default}\nComienza en {orange}{2}{default} segundos. ¡Escribí {orange}!enter{default} para participar!"
+	}
+	"GiveawayInProgress"
+	{
+		"es" "{yellow}[Sorteos]{default} ¡Ya hay un sorteo en curso!"
+	}
+	"GiveawayNone" 
+	{
+		"es" "{yellow}[Sorteos]{default} ¡No hay ningún sorteo en curso!"
+	}
+	"GiveawayAlreadyParticipating" 
+	{
+		"es" "{yellow}[Sorteos]{default} ¡Ya estás participando en este sorteo!"
+	}
+	"GiveawayEntered" 
+	{
+		"es" "{yellow}[Sorteos]{default} ¡Entraste al sorteo! ¡Buena suerte!"
+	}
+	"GiveawayLeft" 
+	{
+		"es" "{yellow}[Sorteos]{default} ¡Abandonaste este sorteo!"
+	}
+	"GiveawayNoWinners_Center"
+	{
+		"es" "¡SIN GANADORES!"
+	}
+	"GiveawayNoWinners_Chat"
+	{
+		"es" "{yellow}[Sorteos]{default} ¡SIN GANADORES!"
+	}
+	"GiveawayWinnerAnnouncement_Center"
+	{
+		"#format" "{1:N}"
+		"es" "¡EL GANADOR ES {1}!"
+	}
+	"GiveawayWinnerAnnouncement_Chat"
+	{
+		"#format" "{1:N}"
+		"es" "{yellow}[Sorteos]{default} ¡EL GANADOR ES {yellow}{1}{default}!"
+	}
+}
