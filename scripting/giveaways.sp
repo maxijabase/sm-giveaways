@@ -1,6 +1,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <autoexecconfig>
+#include <morecolors>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -34,14 +35,15 @@ public void OnPluginStart() {
 	CreateConVar("sm_giveaways_version", PLUGIN_VERSION, "Standar plugin version ConVar. Please don't change me!", FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
 	
 	g_cvPlaySounds = AutoExecConfig_CreateConVar("sm_giveaways_sounds", "1", "Play start, enter, and end sounds.");
-	g_cvGiveawayTime = AutoExecConfig_CreateConVar("sm_giveaways_time", "5", "Amount of time before the giveaway entry time stops");
+	g_cvGiveawayTime = AutoExecConfig_CreateConVar("sm_giveaways_time", "60", "Amount of time before the giveaway entry time stops");
 	
-	RegAdminCmd("sm_gstart", CMD_CreateGiveaway, ADMFLAG_ROOT, "Starts a giveaway.");
-	RegAdminCmd("sm_gstop", CMD_StopGiveaway, ADMFLAG_ROOT);
-	RegAdminCmd("sm_gcancel", CMD_StopGiveaway, ADMFLAG_ROOT);
+	RegAdminCmd("sm_gstart", CMD_CreateGiveaway, ADMFLAG_GENERIC, "Starts a giveaway");
+	RegAdminCmd("sm_gstop", CMD_StopGiveaway, ADMFLAG_GENERIC, "Stops the current giveaway");
+	RegAdminCmd("sm_gcancel", CMD_CancelGiveaway, ADMFLAG_GENERIC, "Cancels the current giveaway");
+	RegAdminCmd("sm_gparticipants", CMD_Participants, ADMFLAG_GENERIC, "Shows the participants of the current giveaway.");
 	
-	RegConsoleCmd("sm_enter", CMD_Enter);
-	RegConsoleCmd("sm_leave", CMD_Leave);
+	RegConsoleCmd("sm_enter", CMD_Enter, "Enter the giveaway!");
+	RegConsoleCmd("sm_leave", CMD_Leave, "Leave the giveaway!");
 	
 	g_alParticipants = new ArrayList();
 	
@@ -64,7 +66,7 @@ public void OnMapStart() {
 
 public Action CMD_CreateGiveaway(int client, int args) {
 	if (g_bActiveGiveaway) {
-		ReplyToCommand(client, "%t", "GiveawayInProgress");
+		MC_ReplyToCommand(client, "%t", "GiveawayInProgress");
 		return Plugin_Handled;
 	}
 	
@@ -89,10 +91,10 @@ public Action CMD_CreateGiveaway(int client, int args) {
 	
 	// Send message to chat
 	if (arg[0] == '\0') {
-		PrintToChatAll("%t", "GiveawayStarting_Chat");
+		MC_PrintToChatAll("%t", "GiveawayStarting_Chat", g_cvGiveawayTime.IntValue);
 	}
 	else {
-		PrintToChatAll("%t", "GiveawayStarting_Chat_Prize");
+		MC_PrintToChatAll("%t", "GiveawayStarting_Chat_Prize", arg, g_cvGiveawayTime.IntValue);
 	}
 	
 	// Send sounds if enabled
@@ -112,14 +114,17 @@ public Action TimerEndCallback(Handle timer) {
 public Action CMD_StopGiveaway(int client, int args) {
 	// Check if there's an ongoing giveaway
 	if (!g_bActiveGiveaway) {
-		ReplyToCommand(client, "%t", "GiveawayNone");
+		MC_ReplyToCommand(client, "%t", "GiveawayNone");
 		return Plugin_Handled;
 	}
 	
 	// Check if there are potential winners
 	if (g_alParticipants.Length == 0) {
 		PrintCenterTextAll("%t", "GiveawayNoWinners_Center");
-		PrintToChatAll("%t", "GiveawayNoWinners_Chat");
+		MC_PrintToChatAll("%t", "GiveawayNoWinners_Chat");
+		
+		// Play sound if enabled
+		PlaySound("giveaway_canceled.wav");
 	}
 	else {
 		// Get winner
@@ -128,11 +133,11 @@ public Action CMD_StopGiveaway(int client, int args) {
 		
 		// Announce winner
 		PrintCenterTextAll("%t", "GiveawayWinnerAnnouncement_Center", winner);
-		PrintToChatAll("%t", "GiveawayWinnerAnnouncement_Chat");
+		MC_PrintToChatAll("%t", "GiveawayWinnerAnnouncement_Chat", winner);
+		
+		// Play sound if enabled
+		PlaySound("giveaway_end.wav");
 	}
-	
-	// Play sound if enabled
-	PlaySound("giveaway_stop.wav");
 	
 	// Set flags and buffers
 	g_bActiveGiveaway = false;
@@ -141,17 +146,38 @@ public Action CMD_StopGiveaway(int client, int args) {
 	return Plugin_Handled;
 }
 
+public Action CMD_CancelGiveaway(int client, int args) {
+	// Check if there's an ongoing giveaway
+	if (!g_bActiveGiveaway) {
+		MC_ReplyToCommand(client, "%t", "GiveawayNone");
+		return Plugin_Handled;
+	}
+	
+	// Cancel giveaway
+	g_bActiveGiveaway = false;
+	g_alParticipants.Clear();
+	
+	// Announce
+	PrintCenterTextAll("%t", "GiveawayCanceled_Center");
+	MC_PrintToChatAll("%t", "GiveawayCanceled_Chat");
+	
+	// Play sound if enables
+	PlaySound("giveaway_canceled.wav");
+	
+	return Plugin_Handled;
+}
+
 public Action CMD_Enter(int client, int args) {
 	// Check for current giveaways
 	if (!g_bActiveGiveaway) {
-		ReplyToCommand(client, "%t", "GiveawayNone");
+		MC_ReplyToCommand(client, "%t", "GiveawayNone");
 		return Plugin_Handled;
 	}
 	
 	// Check if he's already participating
 	int userid = GetClientUserId(client);
 	if (g_alParticipants.FindValue(userid) != -1) {
-		ReplyToCommand(client, "%t", "GiveawayAlreadyParticipating");
+		MC_ReplyToCommand(client, "%t", "GiveawayAlreadyParticipating");
 		return Plugin_Handled;
 	}
 	
@@ -159,10 +185,10 @@ public Action CMD_Enter(int client, int args) {
 	g_alParticipants.Push(GetClientUserId(client));
 	
 	// Announce participance
-	ReplyToCommand(client, "%t", "GiveawayEntered");
+	MC_ReplyToCommand(client, "%t", "GiveawayEntered");
 	
 	// Play sound if enabled
-	PlaySound("giveaway_entered.wav");
+	PlaySound("giveaway_entered.wav", client);
 	
 	return Plugin_Handled;
 }
@@ -170,7 +196,7 @@ public Action CMD_Enter(int client, int args) {
 public Action CMD_Leave(int client, int args) {
 	// Check for current giveaway
 	if (!g_bActiveGiveaway) {
-		ReplyToCommand(client, "%t", "GiveawayNone");
+		MC_ReplyToCommand(client, "%t", "GiveawayNone");
 		return Plugin_Handled;
 	}
 	
@@ -178,20 +204,53 @@ public Action CMD_Leave(int client, int args) {
 	
 	// Check if he was participating
 	if (participant == -1) {
-		ReplyToCommand(client, "GiveawayNotParticipating");
+		MC_ReplyToCommand(client, "%t", "GiveawayNotParticipating");
 		return Plugin_Handled;
 	}
 	
 	// Delete him from participants
-	g_alParticipants.Erase(g_alParticipants.Get(participant));
+	g_alParticipants.Erase(participant);
+	
+	// Play sound if enabled
+	PlaySound("giveaway_canceled.wav", client);
 	
 	// Inform
-	ReplyToCommand(client, "%t", "GiveawayLeft");
+	MC_ReplyToCommand(client, "%t", "GiveawayLeft");
 	return Plugin_Handled;
 }
 
-void PlaySound(char[] sound) {
+public Action CMD_Participants(int client, int args) {
+	// Check for current giveaway
+	if (!g_bActiveGiveaway) {
+		MC_ReplyToCommand(client, "%t", "GiveawayNone");
+		return Plugin_Handled;
+	}
+	
+	int participants = g_alParticipants.Length;
+	
+	// Check for participants
+	if (participants == 0) {
+		MC_ReplyToCommand(client, "%t", "GiveawayNoParticipants");
+		return Plugin_Handled;
+	}
+	
+	Menu menu = new Menu(ParticipantsMenu);
+	menu.SetTitle("%d participants", participants);
+	
+	for (int i = 0; i < participants; i++) {
+		int participant = GetClientOfUserId(g_alParticipants.Get(i));
+		char name[MAX_NAME_LENGTH];
+		Format(name, sizeof(name), "%N", participant);
+		menu.AddItem(name, name, ITEMDRAW_DISABLED);
+	}
+	menu.Display(client, MENU_TIME_FOREVER);
+	return Plugin_Handled;
+}
+
+public int ParticipantsMenu(Menu menu, MenuAction action, int param1, int param2) {  }
+
+void PlaySound(char[] sound, int client = 0) {
 	if (g_cvPlaySounds.BoolValue) {
-		EmitSoundToAll(sound);
+		client ? EmitSoundToClient(client, sound) : EmitSoundToAll(sound);
 	}
 } 
