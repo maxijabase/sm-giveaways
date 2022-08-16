@@ -3,75 +3,92 @@
 	"GiveawayStarting_Center"
 	{
 		"#format" "{1:d}"
-		"en" "¡EMPEZÓ UN SORTEO! COMIENZA EN {1} SEGUNDOS - ESCRIBÍ !enter PARA PARTICIPAR"
+		"en" "A GIVEAWAY JUST STARTED AND WILL END IN {1} SECONDS! TYPE !enter TO HOP IN!"
+		"es" "¡EMPEZÓ UN SORTEO! COMIENZA EN {1} SEGUNDOS - ESCRIBÍ !enter PARA PARTICIPAR"
 	}
 	"GiveawayStarting_Center_Prize"
 	{
 		"#format" "{1:s},{2:d}"
-		"en" "¡EMPEZÓ UN SORTEO! SE SORTEA UN/A {1}\nCOMIENZA EN {2} SEGUNDOS - ESCRIBÍ !enter PARA PARTICIPAR"
+		"en" "A GIVEAWAY FOR A {1} STARTS IN {2} SECONDS! TYPE !enter AND DON'T MISS OUT!"
+		"es" "¡EMPEZÓ UN SORTEO! SE SORTEA UN/A {1}\nCOMIENZA EN {2} SEGUNDOS - ESCRIBÍ !enter PARA PARTICIPAR"
 	}
 	"GiveawayStarting_Chat"
 	{
 		"#format" "{1:d}"
-		"en" "{yellow}[Sorteos] {orange}¡EMPEZÓ UN SORTEO!{default} Comienza en {orange}{1}{default} segundos. ¡Escribí {orange}!enter{default} para participar!"
+		"en" "{yellow}[Giveaways!] {orange}A GIVEAWAY JUST STARTED!{default} It will end in {orange}{1}{default} seconds. Type {orange}!enter{default} to participate!"
+		"es" "{yellow}[Sorteos] {orange}¡EMPEZÓ UN SORTEO!{default} Comienza en {orange}{1}{default} segundos. ¡Escribí {orange}!enter{default} para participar!"
 	}
 	"GiveawayStarting_Chat_Prize"
 	{
 		"#format" "{1:s},{2:d}"
-		"en" "{yellow}[Sorteos] {orange}¡EMPEZÓ UN SORTEO!{default} Se sortea un/a {azure}{1}{default}\nComienza en {orange}{2}{default} segundos. ¡Escribí {orange}!enter{default} para participar!"
+		"en" "{yellow}[Giveaways!] {orange}A GIVEAWAY FOR A {1} JUST STARTED!{default} It will end in {orange}{2}{default} seconds. Type {orange}!enter{default} to participate!"
+		"es" "{yellow}[Sorteos] {orange}¡EMPEZÓ UN SORTEO!{default} Se sortea un/a {azure}{1}{default}\nComienza en {orange}{2}{default} segundos. ¡Escribí {orange}!enter{default} para participar!"
 	}
 	"GiveawayInProgress"
 	{
-		"en" "{yellow}[Sorteos]{default} ¡Ya hay un sorteo en curso!"
+		"en" "{yellow}[Giveaways!]{default} There's a giveaway already in progress!"
+		"es" "{yellow}[Sorteos]{default} ¡Ya hay un sorteo en curso!"
 	}
 	"GiveawayNone" 
 	{
-		"en" "{yellow}[Sorteos]{default} ¡No hay ningún sorteo en curso!"
+		"en" "{yellow}[Giveaways!]{default} No giveaway in progress!"
+		"es" "{yellow}[Sorteos]{default} ¡No hay ningún sorteo en curso!"
 	}
 	"GiveawayAlreadyParticipating" 
 	{
-		"en" "{yellow}[Sorteos]{default} ¡Ya estás participando en este sorteo!"
+		"en" "{yellow}[Giveaways!]{default} You're already participating in this giveaway!"
+		"es" "{yellow}[Sorteos]{default} ¡Ya estás participando en este sorteo!"
 	}
 	"GiveawayNotParticipating" 
 	{
-		"en" "{yellow}[Sorteos]{default} ¡No estabas participando en este sorteo!"
+		"en" "{yellow}[Giveaways!]{default} You weren't participating in this giveaway!"
+		"es" "{yellow}[Sorteos]{default} ¡No estabas participando en este sorteo!"
 	}
 	"GiveawayEntered" 
 	{
-		"en" "{yellow}[Sorteos]{default} ¡Entraste al sorteo! ¡Buena suerte!"
+		"en" "{yellow}[Giveaways!]{default} You are in! Good luck!"
+		"es" "{yellow}[Sorteos]{default} ¡Entraste al sorteo! ¡Buena suerte!"
 	}
 	"GiveawayLeft" 
 	{
-		"en" "{yellow}[Sorteos]{default} ¡Abandonaste este sorteo!"
+		"en" "{yellow}[Giveaways!]{default} You left the giveaway!"
+		"es" "{yellow}[Sorteos]{default} ¡Abandonaste este sorteo!"
 	}
 	"GiveawayNoParticipants"
 	{
-		"en" "{yellow}[Sorteos]{default} ¡Nadie participó todavía!"
+		"en" "{yellow}[Giveaways!]{default} No participants yet!"
+		"es" "{yellow}[Sorteos]{default} ¡Nadie participó todavía!"
 	}
 	"GiveawayNoWinners_Center"
 	{
-		"en" "¡SIN GANADORES! ¡Nadie entró al sorteo!"
+		"en" "NO WINNERS! Nobody participated!"
+		"es" "¡SIN GANADORES! ¡Nadie entró al sorteo!"
 	}
 	"GiveawayNoWinners_Chat"
 	{
-		"en" "{yellow}[Sorteos]{default} ¡SIN GANADORES! ¡Nadie entró al sorteo!"
+		"en" "{yellow}[Giveaways!]{default} NO WINNERS! Nobody participated!"
+		"es" "{yellow}[Sorteos]{default} ¡SIN GANADORES! ¡Nadie entró al sorteo!"
 	}
 	"GiveawayWinnerAnnouncement_Center"
 	{
 		"#format" "{1:N}"
-		"en" "¡EL GANADOR ES {1}!"
+		"en" "THE WINNER IS {1}!"
+		"es" "¡EL GANADOR ES {1}!"
 	}
 	"GiveawayWinnerAnnouncement_Chat"
 	{
 		"#format" "{1:N}"
-		"en" "{yellow}[Sorteos]{default} ¡EL GANADOR ES {yellow}{1}{default}!"
+		"en" "{yellow}[Giveaways!]{default} THE WINNER IS {yellow}{1}{default}!"
+		"es" "{yellow}[Sorteos]{default} ¡EL GANADOR ES {yellow}{1}{default}!"
 	}
 	"GiveawayCanceled_Center"
 	{
-		"en" "¡Sorteo cancelado!"
+		"en" "Giveaway canceled!"
+		"es" "¡Sorteo cancelado!"
 	}
 	"GiveawayCanceled_Chat"
 	{
-		"en" "{yellow}[Sorteos]{default} ¡Sorteo cancelado!"
+		"en" "{yellow}[Giveaways!]{default} Giveaway canceled!"
+		"es" "{yellow}[Sorteos]{default} ¡Sorteo cancelado!"
 	}
 }
