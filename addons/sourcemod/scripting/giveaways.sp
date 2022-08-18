@@ -15,9 +15,11 @@
 
 ConVar g_cvPlaySounds;
 ConVar g_cvGiveawayTime;
+ConVar g_cvWinnerCooldown;
 
 bool g_bActiveGiveaway = false;
 ArrayList g_alParticipants;
+StringMap g_smPastWinners;
 
 public Plugin myinfo = {
 	name = "Giveaways!", 
@@ -36,6 +38,7 @@ public void OnPluginStart() {
 	
 	g_cvPlaySounds = AutoExecConfig_CreateConVar("sm_giveaways_sounds", "1", "Play start, enter, and end sounds.");
 	g_cvGiveawayTime = AutoExecConfig_CreateConVar("sm_giveaways_time", "60", "Amount of time before the giveaway entry time stops");
+	g_cvWinnerCooldown = AutoExecConfig_CreateConVar("sm_giveaways_winner_cooldown", "1", "Amount of giveaways that must pass before someone that has won, can win again.");
 	
 	RegAdminCmd("sm_gstart", CMD_CreateGiveaway, ADMFLAG_GENERIC, "Starts a giveaway");
 	RegAdminCmd("sm_gstop", CMD_StopGiveaway, ADMFLAG_GENERIC, "Stops the current giveaway");
@@ -46,6 +49,7 @@ public void OnPluginStart() {
 	RegConsoleCmd("sm_leave", CMD_Leave, "Leave the giveaway!");
 	
 	g_alParticipants = new ArrayList();
+	g_smPastWinners = new StringMap();
 	
 	LoadTranslations("giveaways.phrases");
 	
@@ -64,7 +68,13 @@ public void OnMapStart() {
 	AddFileToDownloadsTable("sound/giveaway_canceled.wav");
 }
 
+public void OnMapEnd() {
+	g_alParticipants.Clear();
+	g_smPastWinners.Clear();
+}
+
 public Action CMD_CreateGiveaway(int client, int args) {
+	// Check for current giveaway
 	if (g_bActiveGiveaway) {
 		MC_ReplyToCommand(client, "%t", "GiveawayInProgress");
 		return Plugin_Handled;
@@ -131,12 +141,23 @@ public Action CMD_StopGiveaway(int client, int args) {
 		int random = GetRandomInt(0, g_alParticipants.Length - 1);
 		int winner = GetClientOfUserId(g_alParticipants.Get(random));
 		
+		char steamid[32];
+		GetClientAuthId(winner, AuthId_Steam2, steamid, sizeof(steamid));
+		
 		// Announce winner
 		PrintCenterTextAll("%t", "GiveawayWinnerAnnouncement_Center", winner);
 		MC_PrintToChatAll("%t", "GiveawayWinnerAnnouncement_Chat", winner);
 		
 		// Play sound if enabled
 		PlaySound("giveaway_end.wav");
+		
+		// Advance cooldowns
+		AdvanceCooldowns();
+		
+		// Add winner to cooldown list if enabled
+		if (g_cvWinnerCooldown.IntValue > 0) {
+			g_smPastWinners.SetValue(steamid, 0);
+		}
 	}
 	
 	// Set flags and buffers
@@ -181,8 +202,10 @@ public Action CMD_Enter(int client, int args) {
 		return Plugin_Handled;
 	}
 	
-	// Push to participants list
-	g_alParticipants.Push(GetClientUserId(client));
+	// Push to participants list only if he's not on cooldown
+	if (CanParticipate(client)) {
+		g_alParticipants.Push(GetClientUserId(client));
+	}
 	
 	// Announce participance
 	MC_ReplyToCommand(client, "%t", "GiveawayEntered");
@@ -253,4 +276,38 @@ void PlaySound(char[] sound, int client = 0) {
 	if (g_cvPlaySounds.BoolValue) {
 		client ? EmitSoundToClient(client, sound) : EmitSoundToAll(sound);
 	}
+}
+
+void AdvanceCooldowns() {
+	// Advance cooldown in past winners (thanks Doggy for the snippet)
+	StringMapSnapshot snapshot = g_smPastWinners.Snapshot();
+	for (int i = 0; i < snapshot.Length; i++)
+	{
+		int bufferSize = snapshot.KeyBufferSize(i);
+		char[] key = new char[bufferSize];
+		snapshot.GetKey(i, key, bufferSize);
+		
+		int value;
+		g_smPastWinners.GetValue(key, value);
+		int next = value + 1;
+		if (next < g_cvWinnerCooldown.IntValue) {
+			g_smPastWinners.SetValue(key, value + 1);
+		}
+		else {
+			g_smPastWinners.Remove(key);
+		}
+	}
+	delete snapshot;
+}
+
+bool CanParticipate(int client) {
+	char steamid[32];
+	GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid));
+	
+	int passed;
+	if (g_smPastWinners.GetValue(steamid, passed)) {
+		return passed >= g_cvWinnerCooldown.IntValue;
+	}
+	
+	return true;
 } 
