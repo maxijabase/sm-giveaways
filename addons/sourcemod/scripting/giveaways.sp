@@ -8,11 +8,6 @@
 
 #define PLUGIN_VERSION "1.0"
 
-#define SOUND_GIVEAWAY_START "forward.wav"
-#define SOUND_GIVEAWAY_ENTER ""
-#define SOUND_GIVEAWAY_END ""
-#define SOUND_GIVEAWAY_CANCELED ""
-
 ConVar g_cvPlaySounds;
 ConVar g_cvGiveawayTime;
 ConVar g_cvWinnerCooldown;
@@ -80,32 +75,30 @@ public Action CMD_CreateGiveaway(int client, int args) {
 		return Plugin_Handled;
 	}
 	
-	// Get prize string and format message accordingly
+	int time = g_cvGiveawayTime.IntValue;
+	
+	// Get prize string and format messages accordingly
 	char arg[64];
 	GetCmdArgString(arg, sizeof(arg));
 	TrimString(arg);
 	
-	char message[512];
+	char messageCenter[512];
+	char messageChat[512];
 	if (arg[0] == '\0') {
-		Format(message, sizeof(message), "%t", "GiveawayStarting_Center", g_cvGiveawayTime.IntValue);
+		Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayStarting_Center", time);
+		Format(messageChat, sizeof(messageChat), "%t", "GiveawayStarting_Chat", time);
 	}
 	else {
-		Format(message, sizeof(message), "%t", "GiveawayStarting_Center_Prize", arg, g_cvGiveawayTime.IntValue);
+		Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayStarting_Center_Prize", arg, time);
+		Format(messageChat, sizeof(messageChat), "%t", "GiveawayStarting_Chat_Prize", arg, time);
 	}
 	
 	// Set buffers
 	g_bActiveGiveaway = true;
 	
-	// Send message to center
-	PrintCenterTextAll(message);
-	
-	// Send message to chat
-	if (arg[0] == '\0') {
-		MC_PrintToChatAll("%t", "GiveawayStarting_Chat", g_cvGiveawayTime.IntValue);
-	}
-	else {
-		MC_PrintToChatAll("%t", "GiveawayStarting_Chat_Prize", arg, g_cvGiveawayTime.IntValue);
-	}
+	// Send messages
+	PrintCenterTextAll(messageCenter);
+	MC_PrintToChatAll(messageChat);
 	
 	// Send sounds if enabled
 	PlaySound("giveaway_starting.wav");
@@ -144,9 +137,6 @@ public Action CMD_StopGiveaway(int client, int args) {
 		int random = GetRandomInt(0, g_alParticipants.Length - 1);
 		int winner = GetClientOfUserId(g_alParticipants.Get(random));
 		
-		char steamid[32];
-		GetClientAuthId(winner, AuthId_Steam2, steamid, sizeof(steamid));
-		
 		// Announce winner
 		PrintCenterTextAll("%t", "GiveawayWinnerAnnouncement_Center", winner);
 		MC_PrintToChatAll("%t", "GiveawayWinnerAnnouncement_Chat", winner);
@@ -158,7 +148,10 @@ public Action CMD_StopGiveaway(int client, int args) {
 		AdvanceCooldowns();
 		
 		// Add winner to cooldown list if enabled
+		
 		if (g_cvWinnerCooldown.IntValue > 0) {
+			char steamid[32];
+			GetClientAuthId(winner, AuthId_Steam2, steamid, sizeof(steamid));
 			g_smPastWinners.SetValue(steamid, 0);
 		}
 	}
@@ -258,7 +251,7 @@ public Action CMD_Participants(int client, int args) {
 		return Plugin_Handled;
 	}
 	
-	Menu menu = new Menu(ParticipantsMenu);
+	Menu menu = new Menu(EmptyMenu);
 	menu.SetTitle("%d participants", participants);
 	
 	for (int i = 0; i < participants; i++) {
@@ -271,7 +264,7 @@ public Action CMD_Participants(int client, int args) {
 	return Plugin_Handled;
 }
 
-public int ParticipantsMenu(Menu menu, MenuAction action, int param1, int param2) {  }
+public int EmptyMenu(Menu menu, MenuAction action, int param1, int param2) {  }
 
 void PlaySound(char[] sound, int client = 0) {
 	if (g_cvPlaySounds.BoolValue) {
@@ -284,15 +277,21 @@ void AdvanceCooldowns() {
 	StringMapSnapshot snapshot = g_smPastWinners.Snapshot();
 	for (int i = 0; i < snapshot.Length; i++)
 	{
+		// Get key...
 		int bufferSize = snapshot.KeyBufferSize(i);
 		char[] key = new char[bufferSize];
 		snapshot.GetKey(i, key, bufferSize);
 		
+		// ...to get value
 		int value;
 		g_smPastWinners.GetValue(key, value);
+		
+		// Advance...
 		int next = value + 1;
+		
+		// If next is below cooldown, keep waiting, otherwise he's free to go
 		if (next < g_cvWinnerCooldown.IntValue) {
-			g_smPastWinners.SetValue(key, value + 1);
+			g_smPastWinners.SetValue(key, next);
 		}
 		else {
 			g_smPastWinners.Remove(key);
@@ -302,16 +301,18 @@ void AdvanceCooldowns() {
 }
 
 bool CanParticipate(int client) {
+	// Get auth
 	char steamid[32];
 	GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid));
 	
+	// And check if he's even won, and if he's still below cooldown
 	int passed;
 	if (g_smPastWinners.GetValue(steamid, passed)) {
 		return passed >= g_cvWinnerCooldown.IntValue;
 	}
 	
 	return true;
-} 
+}
 
 void FilterParticipants() {
 	for (int i = 0; i < g_alParticipants.Length; i++) {
@@ -320,4 +321,4 @@ void FilterParticipants() {
 			g_alParticipants.Erase(i);
 		}
 	}
-}
+} 
