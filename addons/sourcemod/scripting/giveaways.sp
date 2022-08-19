@@ -137,6 +137,9 @@ public Action CMD_StopGiveaway(int client, int args) {
 		PlaySound("giveaway_canceled.wav");
 	}
 	else {
+		// Filter out people that are not supposed to be participating
+		FilterParticipants();
+		
 		// Get winner
 		int random = GetRandomInt(0, g_alParticipants.Length - 1);
 		int winner = GetClientOfUserId(g_alParticipants.Get(random));
@@ -202,10 +205,8 @@ public Action CMD_Enter(int client, int args) {
 		return Plugin_Handled;
 	}
 	
-	// Push to participants list only if he's not on cooldown
-	if (CanParticipate(client)) {
-		g_alParticipants.Push(GetClientUserId(client));
-	}
+	// Push to participants list
+	g_alParticipants.Push(userid);
 	
 	// Announce participance
 	MC_ReplyToCommand(client, "%t", "GiveawayEntered");
@@ -311,3 +312,12 @@ bool CanParticipate(int client) {
 	
 	return true;
 } 
+
+void FilterParticipants() {
+	for (int i = 0; i < g_alParticipants.Length; i++) {
+		int client = GetClientOfUserId(g_alParticipants.Get(i));
+		if (!CanParticipate(client)) {
+			g_alParticipants.Erase(i);
+		}
+	}
+}
