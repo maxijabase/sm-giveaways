@@ -134,8 +134,11 @@ public Action CMD_StopGiveaway(int client, int args) {
 		FilterParticipants();
 		
 		// Get winner
-		int random = GetRandomInt(0, g_alParticipants.Length - 1);
-		int winner = GetClientOfUserId(g_alParticipants.Get(random));
+		int random, winner;
+		do {
+			random = GetRandomInt(0, g_alParticipants.Length - 1);
+			winner = GetClientOfUserId(g_alParticipants.Get(random));
+		} while (winner == 0);
 		
 		// Announce winner
 		PrintCenterTextAll("%t", "GiveawayWinnerAnnouncement_Center", winner);
