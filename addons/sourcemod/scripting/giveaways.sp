@@ -6,13 +6,16 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.0"
+#define PLUGIN_VERSION "1.1"
 
 ConVar g_cvPlaySounds;
 ConVar g_cvGiveawayTime;
 ConVar g_cvWinnerCooldown;
+ConVar g_cvCountdown;
 
 bool g_bActiveGiveaway = false;
+bool g_bSuspensePlayed = false;
+int g_iCountdownInterval;
 ArrayList g_alParticipants;
 StringMap g_smPastWinners;
 
@@ -34,6 +37,7 @@ public void OnPluginStart() {
 	g_cvPlaySounds = AutoExecConfig_CreateConVar("sm_giveaways_sounds", "1", "Play start, enter, and end sounds.");
 	g_cvGiveawayTime = AutoExecConfig_CreateConVar("sm_giveaways_time", "60", "Amount of time before the giveaway entry time stops");
 	g_cvWinnerCooldown = AutoExecConfig_CreateConVar("sm_giveaways_winner_cooldown", "1", "Amount of giveaways that must pass before someone that has won, can win again.");
+	g_cvCountdown = AutoExecConfig_CreateConVar("sm_giveaways_countdown", "1", "Enable 5 second countdown in center screen and chat.");
 	
 	RegAdminCmd("sm_gstart", CMD_CreateGiveaway, ADMFLAG_GENERIC, "Starts a giveaway");
 	RegAdminCmd("sm_gstop", CMD_StopGiveaway, ADMFLAG_GENERIC, "Stops the current giveaway");
@@ -55,10 +59,12 @@ public void OnPluginStart() {
 public void OnMapStart() {
 	PrecacheSound("giveaway_starting.wav");
 	PrecacheSound("giveaway_entered.wav");
+	PrecacheSound("giveaway_suspense.wav");
 	PrecacheSound("giveaway_end.wav");
 	PrecacheSound("giveaway_canceled.wav");
 	AddFileToDownloadsTable("sound/giveaway_starting.wav");
 	AddFileToDownloadsTable("sound/giveaway_entered.wav");
+	AddFileToDownloadsTable("sound/giveaway_suspense.wav");
 	AddFileToDownloadsTable("sound/giveaway_end.wav");
 	AddFileToDownloadsTable("sound/giveaway_canceled.wav");
 }
@@ -95,6 +101,7 @@ public Action CMD_CreateGiveaway(int client, int args) {
 	
 	// Set buffers
 	g_bActiveGiveaway = true;
+	g_bSuspensePlayed = false;
 	
 	// Send messages
 	PrintCenterTextAll(messageCenter);
@@ -103,15 +110,40 @@ public Action CMD_CreateGiveaway(int client, int args) {
 	// Send sounds if enabled
 	PlaySound("giveaway_starting.wav");
 	
-	// Send timer
-	CreateTimer(g_cvGiveawayTime.FloatValue, TimerEndCallback);
+	// Enable direct timer or countdown timer depending on cvar setting
+	if (g_cvCountdown.BoolValue) {
+		g_iCountdownInterval = time;
+		CreateTimer(1.0, Timer_CountdownCallback, _, TIMER_REPEAT);
+	}
+	else {
+		CreateTimer(g_cvGiveawayTime.FloatValue, Timer_EndCallback);
+	}
+	
 	return Plugin_Handled;
 }
 
-public Action TimerEndCallback(Handle timer) {
+public Action Timer_EndCallback(Handle timer) {
 	if (g_bActiveGiveaway) {
 		CMD_StopGiveaway(0, 0);
 	}
+}
+
+public Action Timer_CountdownCallback(Handle timer) {
+	if (g_iCountdownInterval == 0) {
+		CMD_StopGiveaway(0, 0);
+		return Plugin_Stop;
+	}
+
+	if (g_iCountdownInterval <= 5) {
+		if (!g_bSuspensePlayed) {
+			PlaySound("giveaway_suspense.wav");
+			g_bSuspensePlayed = true;
+		}
+		PrintCenterTextAll("%t", "GiveawayCountdown_Center", g_iCountdownInterval);
+		MC_PrintToChatAll("%t", "GiveawayCountdown_Chat", g_iCountdownInterval);
+	}
+	g_iCountdownInterval--;
+	return Plugin_Continue;
 }
 
 public Action CMD_StopGiveaway(int client, int args) {
@@ -303,6 +335,15 @@ void AdvanceCooldowns() {
 	delete snapshot;
 }
 
+void FilterParticipants() {
+	for (int i = 0; i < g_alParticipants.Length; i++) {
+		int client = GetClientOfUserId(g_alParticipants.Get(i));
+		if (!CanParticipate(client)) {
+			g_alParticipants.Erase(i);
+		}
+	}
+}
+
 bool CanParticipate(int client) {
 	// Get auth
 	char steamid[32];
@@ -316,12 +357,3 @@ bool CanParticipate(int client) {
 	
 	return true;
 }
-
-void FilterParticipants() {
-	for (int i = 0; i < g_alParticipants.Length; i++) {
-		int client = GetClientOfUserId(g_alParticipants.Get(i));
-		if (!CanParticipate(client)) {
-			g_alParticipants.Erase(i);
-		}
-	}
-} 

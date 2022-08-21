@@ -24,6 +24,18 @@
 		"en" "{yellow}[Giveaways!] {orange}A GIVEAWAY FOR A {1} JUST STARTED!{default} It will end in {orange}{2}{default} seconds. Type {orange}!enter{default} to participate!"
 		"es" "{yellow}[Sorteos] {orange}¡EMPEZÓ UN SORTEO!{default} Se sortea un/a {azure}{1}{default}\nComienza en {orange}{2}{default} segundos. ¡Escribí {orange}!enter{default} para participar!"
 	}
+	"GiveawayCountdown_Center"
+	{
+		"#format" "{1:d}"
+		"en" "THE GIVEAWAY WILL END IN {1}..."
+		"es" "EL SORTEO TERMINA EN {1}..."
+	}
+	"GiveawayCountdown_Chat"
+	{
+		"#format" "{1:d}"
+		"en" "{yellow}[Giveaways!] {default}THE GIVEAWAY WILL END IN {orange}{1}{default}..."
+		"es" "{yellow}[Sorteos] {default}EL SORTEO TERMINA EN {orange}{1}{default}..."
+	}
 	"GiveawayInProgress"
 	{
 		"en" "{yellow}[Giveaways!]{default} There's a giveaway already in progress!"
