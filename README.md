@@ -6,6 +6,8 @@ A SourceMod plugin to make giveaways.
 * `sm_giveaways_sounds` - Whether the plugin should play sounds upon starting, entering, and ending a giveaway (Default: 1)
 * `sm_giveaways_time` - Time in seconds before plugin stops the giveaway and announces the winner (Default: 60)
 * `sm_giveaways_winner_cooldown` - Amount of giveaways that must pass before the winner of a giveaway has the chance to win again (Default: 1)
+* `sm_giveaways_countdown` - Enable or disable a 5 second countdown message with sound effects (Default: 1)
+
 
 ## Commands
 
