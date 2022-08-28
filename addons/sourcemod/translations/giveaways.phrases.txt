@@ -5,102 +5,121 @@
 		"#format" "{1:d}"
 		"en" "A GIVEAWAY JUST STARTED AND WILL END IN {1} SECONDS! TYPE !enter TO HOP IN!"
 		"es" "¡EMPEZÓ UN SORTEO! COMIENZA EN {1} SEGUNDOS - ESCRIBÍ !enter PARA PARTICIPAR"
+		"ru" "РОЗЫГРЫШ ТОЛЬКО ЧТО НАЧАЛСЯ И ЗАКОНЧИТСЯ ЧЕРЕЗ {1} СЕК.! ВВЕДИТЕ !enter, ЧТОБЫ ВОЙТИ!"
 	}
 	"GiveawayStarting_Center_Prize"
 	{
 		"#format" "{1:s},{2:d}"
 		"en" "A GIVEAWAY FOR A {1} STARTS IN {2} SECONDS! TYPE !enter AND DON'T MISS OUT!"
 		"es" "¡EMPEZÓ UN SORTEO! SE SORTEA UN/A {1}\nCOMIENZA EN {2} SEGUNDOS - ESCRIBÍ !enter PARA PARTICIPAR"
+		"ru" "РОЗЫГРЫШ НА {1} НАЧИНАЕТСЯ ЧЕРЕЗ {2} СЕК.! ВВЕДИТЕ !enter И НЕ ПРОПУСТИТЕ!"
 	}
 	"GiveawayStarting_Chat"
 	{
 		"#format" "{1:d}"
 		"en" "{yellow}[Giveaways!] {orange}A GIVEAWAY JUST STARTED!{default} It will end in {orange}{1}{default} seconds. Type {orange}!enter{default} to participate!"
 		"es" "{yellow}[Sorteos] {orange}¡EMPEZÓ UN SORTEO!{default} Comienza en {orange}{1}{default} segundos. ¡Escribí {orange}!enter{default} para participar!"
+		"ru" "{yellow}[Розыгрыш призов!] {orange}РОЗЫГРЫШ ТОЛЬКО ЧТО НАЧАЛСЯ!{default} Он закончится через {orange}{1}{default} сек. Введите {orange}!enter{default} для участия!"
 	}
 	"GiveawayStarting_Chat_Prize"
 	{
 		"#format" "{1:s},{2:d}"
 		"en" "{yellow}[Giveaways!] {orange}A GIVEAWAY FOR A {1} JUST STARTED!{default} It will end in {orange}{2}{default} seconds. Type {orange}!enter{default} to participate!"
 		"es" "{yellow}[Sorteos] {orange}¡EMPEZÓ UN SORTEO!{default} Se sortea un/a {azure}{1}{default}\nComienza en {orange}{2}{default} segundos. ¡Escribí {orange}!enter{default} para participar!"
+		"ru" "{yellow}[Розыгрыш призов!] {orange}РОЗЫГРЫШ НА {1} ТОЛЬКО ЧТО НАЧАЛСЯ!{default} Он закончится через {orange}{2}{default} сек. Введите {orange}!enter{default} для участия!"
 	}
 	"GiveawayCountdown_Center"
 	{
 		"#format" "{1:d}"
 		"en" "THE GIVEAWAY WILL END IN {1}..."
 		"es" "EL SORTEO TERMINA EN {1}..."
+		"ru" "РОЗЫГРЫШ ЗАКОНЧИТСЯ ЧЕРЕЗ {1}..."
 	}
 	"GiveawayCountdown_Chat"
 	{
 		"#format" "{1:d}"
 		"en" "{yellow}[Giveaways!] {default}THE GIVEAWAY WILL END IN {orange}{1}{default}..."
 		"es" "{yellow}[Sorteos] {default}EL SORTEO TERMINA EN {orange}{1}{default}..."
+		"ru" "{yellow}[Розыгрыш призов!] {default}РОЗЫГРЫШ ЗАКОНЧИТСЯ ЧЕРЕЗ {orange}{1}{default}..."
 	}
 	"GiveawayInProgress"
 	{
 		"en" "{yellow}[Giveaways!]{default} There's a giveaway already in progress!"
 		"es" "{yellow}[Sorteos]{default} ¡Ya hay un sorteo en curso!"
+		"ru" "{yellow}[Розыгрыш призов!]{default} Розыгрыш уже идет!"
 	}
 	"GiveawayNone" 
 	{
 		"en" "{yellow}[Giveaways!]{default} No giveaway in progress!"
 		"es" "{yellow}[Sorteos]{default} ¡No hay ningún sorteo en curso!"
+		"ru" "{yellow}[Розыгрыш призов!]{default} Розыгрыш не проводится!"
 	}
 	"GiveawayAlreadyParticipating" 
 	{
 		"en" "{yellow}[Giveaways!]{default} You're already participating in this giveaway!"
 		"es" "{yellow}[Sorteos]{default} ¡Ya estás participando en este sorteo!"
+		"ru" "{yellow}[Розыгрыш призов!]{default} Вы уже участвуете в этом розыгрыше!"
 	}
 	"GiveawayNotParticipating" 
 	{
 		"en" "{yellow}[Giveaways!]{default} You weren't participating in this giveaway!"
 		"es" "{yellow}[Sorteos]{default} ¡No estabas participando en este sorteo!"
+		"ru" "{yellow}[Розыгрыш призов!]{default} Вы не участвовали в этом розыгрыше!"
 	}
 	"GiveawayEntered" 
 	{
 		"en" "{yellow}[Giveaways!]{default} You are in! Good luck!"
 		"es" "{yellow}[Sorteos]{default} ¡Entraste al sorteo! ¡Buena suerte!"
+		"ru" "{yellow}[Розыгрыш призов!]{default} Вы участвуете! Удачи!"
 	}
 	"GiveawayLeft" 
 	{
 		"en" "{yellow}[Giveaways!]{default} You left the giveaway!"
 		"es" "{yellow}[Sorteos]{default} ¡Abandonaste este sorteo!"
+		"ru" "{yellow}[Розыгрыш призов!]{default} Вы покинули участие розыгрыше!"
 	}
 	"GiveawayNoParticipants"
 	{
 		"en" "{yellow}[Giveaways!]{default} No participants yet!"
 		"es" "{yellow}[Sorteos]{default} ¡Nadie participó todavía!"
+		"ru" "{yellow}[Розыгрыш призов!]{default} Участников пока нет!"
 	}
 	"GiveawayNoWinners_Center"
 	{
 		"en" "NO WINNERS! Nobody participated!"
 		"es" "¡SIN GANADORES! ¡Nadie entró al sorteo!"
+		"ru" "НЕТ ПОБЕДИТЕЛЕЙ! Никто не участвовал!"
 	}
 	"GiveawayNoWinners_Chat"
 	{
 		"en" "{yellow}[Giveaways!]{default} NO WINNERS! Nobody participated!"
 		"es" "{yellow}[Sorteos]{default} ¡SIN GANADORES! ¡Nadie entró al sorteo!"
+		"ru" "{yellow}[Розыгрыш призов!]{default} НЕТ ПОБЕДИТЕЛЕЙ! Никто не участвовал!"
 	}
 	"GiveawayWinnerAnnouncement_Center"
 	{
 		"#format" "{1:N}"
 		"en" "THE WINNER IS {1}!"
 		"es" "¡EL GANADOR ES {1}!"
+		"ru" "ПОБЕДИТЕЛЕМ СТАНОВИТСЯ {1}!"
 	}
 	"GiveawayWinnerAnnouncement_Chat"
 	{
 		"#format" "{1:N}"
 		"en" "{yellow}[Giveaways!]{default} THE WINNER IS {yellow}{1}{default}!"
 		"es" "{yellow}[Sorteos]{default} ¡EL GANADOR ES {yellow}{1}{default}!"
+		"ru" "{yellow}[Розыгрыш призов!]{default} ПОБЕДИТЕЛЕМ СТАНОВИТСЯ {yellow}{1}{default}!"
 	}
 	"GiveawayCanceled_Center"
 	{
 		"en" "Giveaway canceled!"
 		"es" "¡Sorteo cancelado!"
+		"ru" "Розыгрыш отменён!"
 	}
 	"GiveawayCanceled_Chat"
 	{
 		"en" "{yellow}[Giveaways!]{default} Giveaway canceled!"
 		"es" "{yellow}[Sorteos]{default} ¡Sorteo cancelado!"
+		"ru" "{yellow}[Розыгрыш призов!]{default} Розыгрыш отменён!"
 	}
 }
