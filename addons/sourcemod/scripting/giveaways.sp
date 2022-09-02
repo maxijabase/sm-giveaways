@@ -35,6 +35,16 @@ public Plugin myinfo = {
 	url = "https://github.com/maxijabase"
 };
 
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
+	RegPluginLibrary("giveaways");
+	
+	g_gfOnGiveawayStart = new GlobalForward("Giveaways_OnGiveawayStart", ET_Event, Param_Cell, Param_String);
+	g_gfOnGiveawayEnded = new GlobalForward("Giveaways_OnGiveawayEnded", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_String);
+	g_gfOnClientEnter = new GlobalForward("Giveaways_OnClientEnter", ET_Event, Param_Cell);
+	g_gfOnClientLeave = new GlobalForward("Giveaways_OnClientLeave", ET_Event, Param_Cell, Param_String);
+	g_gfOnGiveawayCancel = new GlobalForward("Giveaways_OnGiveawayCancel", ET_Event, Param_Cell, Param_Cell);
+}
+
 public void OnPluginStart() {
 	
 	AutoExecConfig_SetCreateFile(true);
@@ -46,12 +56,6 @@ public void OnPluginStart() {
 	g_cvGiveawayTime = AutoExecConfig_CreateConVar("sm_giveaways_time", "60", "Amount of time before the giveaway entry time stops");
 	g_cvWinnerCooldown = AutoExecConfig_CreateConVar("sm_giveaways_winner_cooldown", "1", "Amount of giveaways that must pass before someone that has won, can win again.");
 	g_cvCountdown = AutoExecConfig_CreateConVar("sm_giveaways_countdown", "1", "Enable 5 second countdown in center screen and chat.");
-	
-	g_gfOnGiveawayStart = new GlobalForward("Giveaways_OnGiveawayStart", ET_Event, Param_Cell, Param_String);
-	g_gfOnGiveawayEnded = new GlobalForward("Giveaways_OnGiveawayEnded", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_String);
-	g_gfOnClientEnter = new GlobalForward("Giveaways_OnClientEnter", ET_Event, Param_Cell);
-	g_gfOnClientLeave = new GlobalForward("Giveaways_OnClientLeave", ET_Event, Param_Cell, Param_String);
-	g_gfOnGiveawayCancel = new GlobalForward("Giveaways_OnGiveawayCancel", ET_Ignore);
 	
 	RegAdminCmd("sm_gstart", CMD_CreateGiveaway, ADMFLAG_GENERIC, "Starts a giveaway");
 	RegAdminCmd("sm_gstop", CMD_StopGiveaway, ADMFLAG_GENERIC, "Stops the current giveaway");
@@ -219,7 +223,7 @@ public Action CMD_StopGiveaway(int client, int args) {
 	}
 	
 	// Send forward
-	Forward_OnGiveawayEnded(g_iGiveawayCreator, winner, g_alParticipants.Length, g_cPrize);
+	Forward_OnGiveawayEnded(GetClientOfUserId(g_iGiveawayCreator), winner, g_alParticipants.Length, g_cPrize);
 	
 	// Set flags and buffers
 	g_bActiveGiveaway = false;
@@ -232,7 +236,7 @@ public Action CMD_StopGiveaway(int client, int args) {
 
 public Action CMD_CancelGiveaway(int client, int args) {
 	// Check forward
-	if (!Forward_OnGiveawayCancel()) {
+	if (!Forward_OnGiveawayCancel(GetClientOfUserId(g_iGiveawayCreator), client)) {
 		return Plugin_Handled;
 	}
 	
@@ -441,9 +445,11 @@ bool Forward_OnClientLeave(int client) {
 	return result == Plugin_Continue;
 }
 
-bool Forward_OnGiveawayCancel() {
+bool Forward_OnGiveawayCancel(int creator, int cancelator) {
 	Action result;
 	Call_StartForward(g_gfOnGiveawayCancel);
+	Call_PushCell(creator);
+	Call_PushCell(cancelator);
 	Call_Finish(result);
 	return result == Plugin_Continue;
 } 

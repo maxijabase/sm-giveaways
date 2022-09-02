@@ -46,9 +46,11 @@ forward Action Giveaways_OnClientLeave(int client);
 /*
 * Called when a giveaway gets canceled
 *
+* @param creator		The creator of the giveaway
+* @param cancelator		The user that wants to cancel the giveaway
 * @return 				Plugin_Continue to allow the giveaway to get canceled, Plugin_Handled otherwise
 */
-forward Action Giveaways_OnGiveawayCancel();
+forward Action Giveaways_OnGiveawayCancel(int creator, int cancelator);
 
 public SharedPlugin __pl_giveaways = 
 {
