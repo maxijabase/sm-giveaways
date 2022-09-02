@@ -13,9 +13,17 @@ ConVar g_cvGiveawayTime;
 ConVar g_cvWinnerCooldown;
 ConVar g_cvCountdown;
 
+GlobalForward g_gfOnGiveawayStart;
+GlobalForward g_gfOnGiveawayEnded;
+GlobalForward g_gfOnClientEnter;
+GlobalForward g_gfOnClientLeave;
+GlobalForward g_gfOnGiveawayCancel;
+
 bool g_bActiveGiveaway = false;
 bool g_bSuspensePlayed = false;
 int g_iCountdownInterval;
+int g_iGiveawayCreator;
+char g_cPrize[128];
 ArrayList g_alParticipants;
 StringMap g_smPastWinners;
 
@@ -38,6 +46,12 @@ public void OnPluginStart() {
 	g_cvGiveawayTime = AutoExecConfig_CreateConVar("sm_giveaways_time", "60", "Amount of time before the giveaway entry time stops");
 	g_cvWinnerCooldown = AutoExecConfig_CreateConVar("sm_giveaways_winner_cooldown", "1", "Amount of giveaways that must pass before someone that has won, can win again.");
 	g_cvCountdown = AutoExecConfig_CreateConVar("sm_giveaways_countdown", "1", "Enable 5 second countdown in center screen and chat.");
+	
+	g_gfOnGiveawayStart = new GlobalForward("Giveaways_OnGiveawayStart", ET_Event, Param_Cell, Param_String);
+	g_gfOnGiveawayEnded = new GlobalForward("Giveaways_OnGiveawayEnded", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_String);
+	g_gfOnClientEnter = new GlobalForward("Giveaways_OnClientEnter", ET_Event, Param_Cell);
+	g_gfOnClientLeave = new GlobalForward("Giveaways_OnClientLeave", ET_Event, Param_Cell, Param_String);
+	g_gfOnGiveawayCancel = new GlobalForward("Giveaways_OnGiveawayCancel", ET_Ignore);
 	
 	RegAdminCmd("sm_gstart", CMD_CreateGiveaway, ADMFLAG_GENERIC, "Starts a giveaway");
 	RegAdminCmd("sm_gstop", CMD_StopGiveaway, ADMFLAG_GENERIC, "Stops the current giveaway");
@@ -83,11 +97,17 @@ public Action CMD_CreateGiveaway(int client, int args) {
 	
 	int time = g_cvGiveawayTime.IntValue;
 	
-	// Get prize string and format messages accordingly
+	// Get prize string
 	char arg[64];
 	GetCmdArgString(arg, sizeof(arg));
 	TrimString(arg);
 	
+	// Check forward
+	if (!Forward_OnGiveawayStart(client, arg)) {
+		return Plugin_Handled;
+	}
+	
+	// Format messages
 	char messageCenter[512];
 	char messageChat[512];
 	if (arg[0] == '\0') {
@@ -102,6 +122,8 @@ public Action CMD_CreateGiveaway(int client, int args) {
 	// Set buffers
 	g_bActiveGiveaway = true;
 	g_bSuspensePlayed = false;
+	g_iGiveawayCreator = GetClientUserId(client);
+	strcopy(g_cPrize, sizeof(g_cPrize), arg);
 	
 	// Send messages
 	PrintCenterTextAll(messageCenter);
@@ -133,8 +155,12 @@ public Action Timer_CountdownCallback(Handle timer) {
 		CMD_StopGiveaway(0, 0);
 		return Plugin_Stop;
 	}
-
+	
 	if (g_iCountdownInterval <= 5) {
+		if (!g_bActiveGiveaway) {
+			return Plugin_Stop;
+		}
+		
 		if (!g_bSuspensePlayed) {
 			PlaySound("giveaway_suspense.wav");
 			g_bSuspensePlayed = true;
@@ -153,6 +179,8 @@ public Action CMD_StopGiveaway(int client, int args) {
 		return Plugin_Handled;
 	}
 	
+	int random, winner;
+	
 	// Check if there are potential winners
 	if (g_alParticipants.Length == 0) {
 		PrintCenterTextAll("%t", "GiveawayNoWinners_Center");
@@ -166,7 +194,6 @@ public Action CMD_StopGiveaway(int client, int args) {
 		FilterParticipants();
 		
 		// Get winner
-		int random, winner;
 		do {
 			random = GetRandomInt(0, g_alParticipants.Length - 1);
 			winner = GetClientOfUserId(g_alParticipants.Get(random));
@@ -191,14 +218,24 @@ public Action CMD_StopGiveaway(int client, int args) {
 		}
 	}
 	
+	// Send forward
+	Forward_OnGiveawayEnded(g_iGiveawayCreator, winner, g_alParticipants.Length, g_cPrize);
+	
 	// Set flags and buffers
 	g_bActiveGiveaway = false;
 	g_alParticipants.Clear();
+	g_iGiveawayCreator = 0;
+	g_cPrize[0] = '\0';
 	
 	return Plugin_Handled;
 }
 
 public Action CMD_CancelGiveaway(int client, int args) {
+	// Check forward
+	if (!Forward_OnGiveawayCancel()) {
+		return Plugin_Handled;
+	}
+	
 	// Check if there's an ongoing giveaway
 	if (!g_bActiveGiveaway) {
 		MC_ReplyToCommand(client, "%t", "GiveawayNone");
@@ -220,6 +257,11 @@ public Action CMD_CancelGiveaway(int client, int args) {
 }
 
 public Action CMD_Enter(int client, int args) {
+	// Check forward
+	if (!Forward_OnClientEnter(client)) {
+		return Plugin_Handled;
+	}
+	
 	// Check for current giveaways
 	if (!g_bActiveGiveaway) {
 		MC_ReplyToCommand(client, "%t", "GiveawayNone");
@@ -246,6 +288,11 @@ public Action CMD_Enter(int client, int args) {
 }
 
 public Action CMD_Leave(int client, int args) {
+	// Check forward
+	if (!Forward_OnClientLeave(client)) {
+		return Plugin_Handled;
+	}
+	
 	// Check for current giveaway
 	if (!g_bActiveGiveaway) {
 		MC_ReplyToCommand(client, "%t", "GiveawayNone");
@@ -357,3 +404,46 @@ bool CanParticipate(int client) {
 	
 	return true;
 }
+
+/* Forwards */
+
+bool Forward_OnGiveawayStart(int client, const char[] prize) {
+	Action result;
+	Call_StartForward(g_gfOnGiveawayStart);
+	Call_PushCell(client);
+	Call_PushString(prize);
+	Call_Finish(result);
+	return result == Plugin_Continue;
+}
+
+void Forward_OnGiveawayEnded(int creator, int winner, int participants, const char[] prize) {
+	Call_StartForward(g_gfOnGiveawayEnded);
+	Call_PushCell(creator);
+	Call_PushCell(winner);
+	Call_PushCell(participants);
+	Call_PushString(prize);
+	Call_Finish();
+}
+
+bool Forward_OnClientEnter(int client) {
+	Action result;
+	Call_StartForward(g_gfOnClientEnter);
+	Call_PushCell(client);
+	Call_Finish(result);
+	return result == Plugin_Continue;
+}
+
+bool Forward_OnClientLeave(int client) {
+	Action result;
+	Call_StartForward(g_gfOnClientLeave);
+	Call_PushCell(client);
+	Call_Finish(result);
+	return result == Plugin_Continue;
+}
+
+bool Forward_OnGiveawayCancel() {
+	Action result;
+	Call_StartForward(g_gfOnGiveawayCancel);
+	Call_Finish(result);
+	return result == Plugin_Continue;
+} 
