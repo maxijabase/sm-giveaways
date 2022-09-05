@@ -122,4 +122,20 @@
 		"es" "{yellow}[Sorteos]{default} ¡Sorteo cancelado!"
 		"ru" "{yellow}[Розыгрыш призов!]{default} Розыгрыш отменён!"
 	}
+	"GiveawayWinner_MenuTitle" 
+	{
+		"en" "YOU HAVE WON!"
+		"es" "¡GANASTE!"
+	}
+	"GiveawayWinner_MenuBody" 
+	{
+		"#format" "{1:N},{2:s}"
+		"en" "Congratulations {1}!\nYou have won the giveaway.\nYour prize is: \"{2}\".\nTo claim it, enter our Discord and drop your trade link there!"
+		"es" "¡Felicitaciones {1}!\nGanaste el sorteo.\nTu premio es: \"{2}\".\nPara reclamarlo, está a nuestro Discord y deja ahí tu trade link."
+	}
+	"Exit"
+	{
+		"en" "Exit"
+		"es" "Salir"
+	}
 }

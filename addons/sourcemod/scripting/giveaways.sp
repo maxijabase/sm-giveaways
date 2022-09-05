@@ -12,6 +12,7 @@ ConVar g_cvPlaySounds;
 ConVar g_cvGiveawayTime;
 ConVar g_cvWinnerCooldown;
 ConVar g_cvCountdown;
+ConVar g_cvSendMenuToWinner;
 
 GlobalForward g_gfOnGiveawayStart;
 GlobalForward g_gfOnGiveawayEnded;
@@ -56,6 +57,7 @@ public void OnPluginStart() {
 	g_cvGiveawayTime = AutoExecConfig_CreateConVar("sm_giveaways_time", "60", "Amount of time before the giveaway entry time stops");
 	g_cvWinnerCooldown = AutoExecConfig_CreateConVar("sm_giveaways_winner_cooldown", "1", "Amount of giveaways that must pass before someone that has won, can win again.");
 	g_cvCountdown = AutoExecConfig_CreateConVar("sm_giveaways_countdown", "1", "Enable 5 second countdown in center screen and chat.");
+	g_cvSendMenuToWinner = AutoExecConfig_CreateConVar("sm_giveaways_winner_sendmenu", "1", "Send an in-game menu (panel) to the winner with customizable details (in translations file).");
 	
 	RegAdminCmd("sm_gstart", CMD_CreateGiveaway, ADMFLAG_GENERIC, "Starts a giveaway");
 	RegAdminCmd("sm_gstop", CMD_StopGiveaway, ADMFLAG_GENERIC, "Stops the current giveaway");
@@ -185,6 +187,9 @@ public Action CMD_StopGiveaway(int client, int args) {
 	
 	int random, winner;
 	
+	// Filter out people that are not supposed to be participating
+	FilterParticipants();
+	
 	// Check if there are potential winners
 	if (g_alParticipants.Length == 0) {
 		PrintCenterTextAll("%t", "GiveawayNoWinners_Center");
@@ -194,9 +199,6 @@ public Action CMD_StopGiveaway(int client, int args) {
 		PlaySound("giveaway_canceled.wav");
 	}
 	else {
-		// Filter out people that are not supposed to be participating
-		FilterParticipants();
-		
 		// Get winner
 		do {
 			random = GetRandomInt(0, g_alParticipants.Length - 1);
@@ -210,11 +212,12 @@ public Action CMD_StopGiveaway(int client, int args) {
 		// Play sound if enabled
 		PlaySound("giveaway_end.wav");
 		
-		// Advance cooldowns
-		AdvanceCooldowns();
+		// Send info menu to winner if enabled
+		if (g_cvSendMenuToWinner.BoolValue) {
+			SendWinnerMenu(winner);
+		}
 		
 		// Add winner to cooldown list if enabled
-		
 		if (g_cvWinnerCooldown.IntValue > 0) {
 			char steamid[32];
 			GetClientAuthId(winner, AuthId_Steam2, steamid, sizeof(steamid));
@@ -224,6 +227,9 @@ public Action CMD_StopGiveaway(int client, int args) {
 	
 	// Send forward
 	Forward_OnGiveawayEnded(GetClientOfUserId(g_iGiveawayCreator), winner, g_alParticipants.Length, g_cPrize);
+	
+	// Advance cooldowns
+	AdvanceCooldowns();
 	
 	// Set flags and buffers
 	g_bActiveGiveaway = false;
@@ -407,6 +413,21 @@ bool CanParticipate(int client) {
 	}
 	
 	return true;
+}
+
+void SendWinnerMenu(int client) {
+	Panel panel = new Panel();
+	char panelTitle[64], panelBody[256], exitString[32];
+	Format(panelTitle, sizeof(panelTitle), "%t", "GiveawayWinner_MenuTitle", client, g_cPrize);
+	Format(panelBody, sizeof(panelBody), "%t", "GiveawayWinner_MenuBody", client, g_cPrize);
+	Format(exitString, sizeof(exitString), "%t", "Exit");
+	panel.SetTitle(panelTitle);
+	panel.DrawText(" ");
+	panel.DrawText(panelBody);
+	panel.DrawText(" ");
+	panel.CurrentKey = 10;
+	panel.DrawItem(exitString);
+	panel.Send(client, EmptyMenu, MENU_TIME_FOREVER);
 }
 
 /* Forwards */
