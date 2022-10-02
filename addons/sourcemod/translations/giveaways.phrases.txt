@@ -126,16 +126,19 @@
 	{
 		"en" "YOU HAVE WON!"
 		"es" "¡GANASTE!"
+		"ru" "ВЫ ВЫИГРАЛИ!"
 	}
 	"GiveawayWinner_MenuBody" 
 	{
 		"#format" "{1:N},{2:s}"
 		"en" "Congratulations {1}!\nYou have won the giveaway.\nYour prize is: \"{2}\".\nTo claim it, enter our Discord and drop your trade link there!"
 		"es" "¡Felicitaciones {1}!\nGanaste el sorteo.\nTu premio es: \"{2}\".\nPara reclamarlo, está a nuestro Discord y deja ahí tu trade link."
+		"ru" "Поздравляем, {1}!\nВы выиграли розыгрыш.\nВаш приз: \"{2}\".\nЧтобы получить его, войдите в наш Discord и скиньте туда ссылку обмена!"
 	}
 	"Exit"
 	{
 		"en" "Exit"
 		"es" "Salir"
+		"ru" "Выход"
 	}
 }
