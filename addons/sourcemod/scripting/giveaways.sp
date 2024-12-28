@@ -6,13 +6,24 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.2"
+#define PLUGIN_VERSION "1.3"
+#define HUD_DISPLAY_TIME 15.0
+#define HUD_FADE_IN 0.1
+#define HUD_FADE_OUT 0.2
 
 ConVar g_cvPlaySounds;
 ConVar g_cvGiveawayTime;
 ConVar g_cvWinnerCooldown;
 ConVar g_cvCountdown;
 ConVar g_cvSendMenuToWinner;
+ConVar g_cvHudX;
+ConVar g_cvHudY;
+ConVar g_cvHudR;
+ConVar g_cvHudG;
+ConVar g_cvHudB;
+ConVar g_cvHudA;
+
+Handle g_hHudSync;
 
 GlobalForward g_gfOnGiveawayStart;
 GlobalForward g_gfOnGiveawayEnded;
@@ -44,20 +55,28 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
   g_gfOnClientEnter = new GlobalForward("Giveaways_OnClientEnter", ET_Event, Param_Cell);
   g_gfOnClientLeave = new GlobalForward("Giveaways_OnClientLeave", ET_Event, Param_Cell, Param_String);
   g_gfOnGiveawayCancel = new GlobalForward("Giveaways_OnGiveawayCancel", ET_Event, Param_Cell, Param_Cell);
+  
+  return APLRes_Success;
 }
 
 public void OnPluginStart() {
-  
   AutoExecConfig_SetCreateFile(true);
   AutoExecConfig_SetFile("giveaways");
   
-  CreateConVar("sm_giveaways_version", PLUGIN_VERSION, "Standar plugin version ConVar. Please don't change me!", FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
+  CreateConVar("sm_giveaways_version", PLUGIN_VERSION, "Standard plugin version ConVar. Please don't change me!", FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
   
   g_cvPlaySounds = AutoExecConfig_CreateConVar("sm_giveaways_sounds", "1", "Play start, enter, and end sounds.");
   g_cvGiveawayTime = AutoExecConfig_CreateConVar("sm_giveaways_time", "60", "Amount of time before the giveaway entry time stops");
   g_cvWinnerCooldown = AutoExecConfig_CreateConVar("sm_giveaways_winner_cooldown", "1", "Amount of giveaways that must pass before someone that has won, can win again.");
-  g_cvCountdown = AutoExecConfig_CreateConVar("sm_giveaways_countdown", "1", "Enable 5 second countdown in center screen and chat.");
-  g_cvSendMenuToWinner = AutoExecConfig_CreateConVar("sm_giveaways_winner_sendmenu", "1", "Send an in-game menu (panel) to the winner with customizable details (in translations file).");
+  g_cvCountdown = AutoExecConfig_CreateConVar("sm_giveaways_countdown", "1", "Enable 5 second countdown in HUD and chat.");
+  g_cvSendMenuToWinner = AutoExecConfig_CreateConVar("sm_giveaways_winner_sendmenu", "1", "Send an in-game menu (panel) to the winner with customizable details.");
+  
+  g_cvHudX = AutoExecConfig_CreateConVar("sm_giveaways_hud_x", "-1.0", "X position for HUD messages (-1.0 = center)");
+  g_cvHudY = AutoExecConfig_CreateConVar("sm_giveaways_hud_y", "0.25", "Y position for HUD messages");
+  g_cvHudR = AutoExecConfig_CreateConVar("sm_giveaways_hud_r", "0", "Red color component for HUD (0-255)");
+  g_cvHudG = AutoExecConfig_CreateConVar("sm_giveaways_hud_g", "255", "Green color component for HUD (0-255)");
+  g_cvHudB = AutoExecConfig_CreateConVar("sm_giveaways_hud_b", "0", "Blue color component for HUD (0-255)");
+  g_cvHudA = AutoExecConfig_CreateConVar("sm_giveaways_hud_a", "255", "Alpha/transparency for HUD (0-255)");
   
   RegAdminCmd("sm_gstart", CMD_CreateGiveaway, ADMFLAG_GENERIC, "Starts a giveaway");
   RegAdminCmd("sm_gstop", CMD_StopGiveaway, ADMFLAG_GENERIC, "Stops the current giveaway");
@@ -65,10 +84,13 @@ public void OnPluginStart() {
   RegAdminCmd("sm_gparticipants", CMD_Participants, ADMFLAG_GENERIC, "Shows the participants of the current giveaway.");
   
   RegConsoleCmd("sm_enter", CMD_Enter, "Enter the giveaway!");
+  RegConsoleCmd("sm_entre", CMD_Enter, "Enter the giveaway!");
+  RegConsoleCmd("sm_entrar", CMD_Enter, "Enter the giveaway!");
   RegConsoleCmd("sm_leave", CMD_Leave, "Leave the giveaway!");
   
   g_alParticipants = new ArrayList();
   g_smPastWinners = new StringMap();
+  g_hHudSync = CreateHudSynchronizer();
   
   LoadTranslations("giveaways.phrases");
   
@@ -132,7 +154,7 @@ public Action CMD_CreateGiveaway(int client, int args) {
   strcopy(g_cPrize, sizeof(g_cPrize), arg);
   
   // Send messages
-  PrintCenterTextAll(messageCenter);
+  ShowSynchronizedHudText(messageCenter);
   MC_PrintToChatAll(messageChat);
   
   // Send sounds if enabled
@@ -154,6 +176,7 @@ public Action Timer_EndCallback(Handle timer) {
   if (g_bActiveGiveaway) {
     CMD_StopGiveaway(0, 0);
   }
+  return Plugin_Continue;
 }
 
 public Action Timer_CountdownCallback(Handle timer) {
@@ -171,8 +194,12 @@ public Action Timer_CountdownCallback(Handle timer) {
       PlaySound("giveaway_suspense.wav");
       g_bSuspensePlayed = true;
     }
-    PrintCenterTextAll("%t", "GiveawayCountdown_Center", g_iCountdownInterval);
-    MC_PrintToChatAll("%t", "GiveawayCountdown_Chat", g_iCountdownInterval);
+    char messageCenter[512];
+    char messageChat[512];
+    Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayCountdown_Center", g_iCountdownInterval);
+    Format(messageChat, sizeof(messageChat), "%t", "GiveawayCountdown_Chat", g_iCountdownInterval);
+    ShowSynchronizedHudText(messageCenter);
+    MC_PrintToChatAll(messageChat);
   }
   g_iCountdownInterval--;
   return Plugin_Continue;
@@ -192,8 +219,12 @@ public Action CMD_StopGiveaway(int client, int args) {
   
   // Check if there are potential winners
   if (g_alParticipants.Length == 0) {
-    PrintCenterTextAll("%t", "GiveawayNoWinners_Center");
-    MC_PrintToChatAll("%t", "GiveawayNoWinners_Chat");
+    char messageCenter[512];
+    char messageChat[512];
+    Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayNoWinners_Center");
+    Format(messageChat, sizeof(messageChat), "%t", "GiveawayNoWinners_Chat");
+    ShowSynchronizedHudText(messageCenter);
+    MC_PrintToChatAll(messageChat);
     
     // Play sound if enabled
     PlaySound("giveaway_canceled.wav");
@@ -206,8 +237,12 @@ public Action CMD_StopGiveaway(int client, int args) {
     } while (winner == 0);
     
     // Announce winner
-    PrintCenterTextAll("%t", "GiveawayWinnerAnnouncement_Center", winner);
-    MC_PrintToChatAll("%t", "GiveawayWinnerAnnouncement_Chat", winner);
+    char messageCenter[512];
+    char messageChat[512];
+    Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayWinnerAnnouncement_Center", winner);
+    Format(messageChat, sizeof(messageChat), "%t", "GiveawayWinnerAnnouncement_Chat", winner);
+    ShowSynchronizedHudText(messageCenter);
+    MC_PrintToChatAll(messageChat);
     
     // Play sound if enabled
     PlaySound("giveaway_end.wav");
@@ -257,8 +292,12 @@ public Action CMD_CancelGiveaway(int client, int args) {
   g_alParticipants.Clear();
   
   // Announce
-  PrintCenterTextAll("%t", "GiveawayCanceled_Center");
-  MC_PrintToChatAll("%t", "GiveawayCanceled_Chat");
+  char messageCenter[512];
+  char messageChat[512];
+  Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayCanceled_Center");
+  Format(messageChat, sizeof(messageChat), "%t", "GiveawayCanceled_Chat");
+  ShowSynchronizedHudText(messageCenter);
+  MC_PrintToChatAll(messageChat);
   
   // Play sound if enables
   PlaySound("giveaway_canceled.wav");
@@ -356,7 +395,7 @@ public Action CMD_Participants(int client, int args) {
   return Plugin_Handled;
 }
 
-public int EmptyMenu(Menu menu, MenuAction action, int param1, int param2) {  }
+public int EmptyMenu(Menu menu, MenuAction action, int param1, int param2) { return 0; }
 
 void PlaySound(char[] sound, int client = 0) {
   if (g_cvPlaySounds.BoolValue) {
@@ -428,6 +467,27 @@ void SendWinnerMenu(int client) {
   panel.CurrentKey = 10;
   panel.DrawItem(exitString);
   panel.Send(client, EmptyMenu, MENU_TIME_FOREVER);
+}
+
+void ShowSynchronizedHudText(const char[] message, bool toAll = true, int client = 0) {
+  float x = g_cvHudX.FloatValue;
+  float y = g_cvHudY.FloatValue;
+  int r = g_cvHudR.IntValue;
+  int g = g_cvHudG.IntValue;
+  int b = g_cvHudB.IntValue;
+  int a = g_cvHudA.IntValue;
+  
+  SetHudTextParams(x, y, HUD_DISPLAY_TIME, r, g, b, a, 1, 0.0, 0.0, 0.2);
+  
+  if(toAll) {
+    for(int i = 1; i <= MaxClients; i++) {
+      if(IsClientInGame(i) && !IsFakeClient(i)) {
+        ShowSyncHudText(i, g_hHudSync, message);
+      }
+    }
+  } else if(IsClientInGame(client)) {
+    ShowSyncHudText(client, g_hHudSync, message);
+  }
 }
 
 /* Forwards */
