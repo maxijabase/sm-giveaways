@@ -98,17 +98,17 @@
 	}
 	"GiveawayWinnerAnnouncement_Center"
 	{
-		"#format" "{1:N}"
-		"en" "THE WINNER IS {1}!"
-		"es" "¡EL GANADOR ES {1}!"
-		"ru" "ПОБЕДИТЕЛЕМ СТАНОВИТСЯ {1}!"
+		"#format" "{1:N}{2:s}"
+		"en" "THE WINNER IS {1}!\nTHE PRIZE IS: {2}!"
+		"es" "¡EL GANADOR ES {1}!\nEL PREMIO ES: ¡{2}!"
+		"ru" "ПОБЕДИТЕЛЕМ СТАНОВИТСЯ {1}! ПРИЗ: {2}!"
 	}
 	"GiveawayWinnerAnnouncement_Chat"
 	{
-		"#format" "{1:N}"
-		"en" "{yellow}[Giveaways!]{default} THE WINNER IS {yellow}{1}{default}!"
-		"es" "{yellow}[Sorteos]{default} ¡EL GANADOR ES {yellow}{1}{default}!"
-		"ru" "{yellow}[Розыгрыш призов!]{default} ПОБЕДИТЕЛЕМ СТАНОВИТСЯ {yellow}{1}{default}!"
+		"#format" "{1:N}{2:s}"
+		"en" "{yellow}[Giveaways!]{default} THE WINNER IS {yellow}{1}{default}! THE PRIZE IS: {yellow}{2}{default}!"
+		"es" "{yellow}[Sorteos]{default} ¡EL GANADOR ES {yellow}{1}{default}! ¡EL PREMIO ES: {yellow}{2}{default}!"
+		"ru" "{yellow}[Розыгрыш призов!]{default} ПОБЕДИТЕЛЕМ СТАНОВИТСЯ {yellow}{1}{default}! ПРИЗ: {yellow}{2}{default}!"
 	}
 	"GiveawayCanceled_Center"
 	{

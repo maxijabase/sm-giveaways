@@ -1,0 +1,21 @@
+"Updater"
+{
+	"Information"
+	{
+		"Version"
+		{
+			"Latest"	"1.4"
+		}
+		
+		"Notes"	"Changes in 1.4:"
+		"Notes"	"- Changed to HUD messages, added prize in winner announcement."
+	}
+	
+	"Files"
+	{
+		"Plugin"	"Path_SM/plugins/giveaways.smx"
+		
+		"Source"	"Path_SM/scripting/giveaways.sp"
+		"Source"	"Path_SM/translations/giveaways.phrases.txt"
+	}
+}

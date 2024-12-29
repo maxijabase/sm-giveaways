@@ -6,10 +6,15 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.3"
+#define PLUGIN_VERSION "1.4"
 #define HUD_DISPLAY_TIME 15.0
 #define HUD_FADE_IN 0.1
 #define HUD_FADE_OUT 0.2
+
+#define UPDATE_URL "https://raw.githubusercontent.com/maxijabase/sm-giveaways/master/updatefile.txt"
+
+#undef REQUIRE_PLUGIN 
+#include <updater>
 
 ConVar g_cvPlaySounds;
 ConVar g_cvGiveawayTime;
@@ -239,8 +244,8 @@ public Action CMD_StopGiveaway(int client, int args) {
     // Announce winner
     char messageCenter[512];
     char messageChat[512];
-    Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayWinnerAnnouncement_Center", winner);
-    Format(messageChat, sizeof(messageChat), "%t", "GiveawayWinnerAnnouncement_Chat", winner);
+    Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayWinnerAnnouncement_Center", winner, g_cPrize);
+    Format(messageChat, sizeof(messageChat), "%t", "GiveawayWinnerAnnouncement_Chat", winner, g_cPrize);
     ShowSynchronizedHudText(messageCenter);
     MC_PrintToChatAll(messageChat);
     
