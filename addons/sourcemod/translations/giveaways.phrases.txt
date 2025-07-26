@@ -103,12 +103,26 @@
 		"es" "¡EL GANADOR ES {1}!\nEL PREMIO ES: ¡{2}!"
 		"ru" "ПОБЕДИТЕЛЕМ СТАНОВИТСЯ {1}! ПРИЗ: {2}!"
 	}
+	"GiveawayWinnerAnnouncement_Center_NoPrize"
+	{
+		"#format" "{1:N}"
+		"en" "THE WINNER IS {1}!"
+		"es" "¡EL GANADOR ES {1}!"
+		"ru" "ПОБЕДИТЕЛЕМ СТАНОВИТСЯ {1}!"
+	}
 	"GiveawayWinnerAnnouncement_Chat"
 	{
 		"#format" "{1:N}{2:s}"
 		"en" "{yellow}[Giveaways!]{default} THE WINNER IS {yellow}{1}{default}! THE PRIZE IS: {yellow}{2}{default}!"
 		"es" "{yellow}[Sorteos]{default} ¡EL GANADOR ES {yellow}{1}{default}! ¡EL PREMIO ES: {yellow}{2}{default}!"
 		"ru" "{yellow}[Розыгрыш призов!]{default} ПОБЕДИТЕЛЕМ СТАНОВИТСЯ {yellow}{1}{default}! ПРИЗ: {yellow}{2}{default}!"
+	}
+	"GiveawayWinnerAnnouncement_Chat_NoPrize"
+	{
+		"#format" "{1:N}"
+		"en" "{yellow}[Giveaways!]{default} THE WINNER IS {yellow}{1}{default}!"
+		"es" "{yellow}[Sorteos]{default} ¡EL GANADOR ES {yellow}{1}{default}!"
+		"ru" "{yellow}[Розыгрыш призов!]{default} ПОБЕДИТЕЛЕМ СТАНОВИТСЯ {yellow}{1}{default}!"
 	}
 	"GiveawayCanceled_Center"
 	{
@@ -134,6 +148,13 @@
 		"en" "Congratulations {1}!\nYou have won the giveaway.\nYour prize is: \"{2}\".\nTo claim it, enter our Discord and drop your trade link there!"
 		"es" "¡Felicitaciones {1}!\nGanaste el sorteo.\nTu premio es: \"{2}\".\nPara reclamarlo, está a nuestro Discord y deja ahí tu trade link."
 		"ru" "Поздравляем, {1}!\nВы выиграли розыгрыш.\nВаш приз: \"{2}\".\nЧтобы получить его, войдите в наш Discord и скиньте туда ссылку обмена!"
+	}
+	"GiveawayWinner_MenuBody_NoPrize" 
+	{
+		"#format" "{1:N}"
+		"en" "Congratulations {1}!\nYou have won the giveaway!\nContact an administrator to claim your prize."
+		"es" "¡Felicitaciones {1}!\n¡Ganaste el sorteo!\nContacta a un administrador para reclamar tu premio."
+		"ru" "Поздравляем, {1}!\nВы выиграли розыгрыш!\nОбратитесь к администратору для получения приза."
 	}
 	"Exit"
 	{

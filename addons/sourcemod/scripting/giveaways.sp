@@ -6,7 +6,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.4"
+#define PLUGIN_VERSION "1.4.1"
 #define HUD_DISPLAY_TIME 15.0
 #define HUD_FADE_IN 0.1
 #define HUD_FADE_OUT 0.2
@@ -244,8 +244,14 @@ public Action CMD_StopGiveaway(int client, int args) {
     // Announce winner
     char messageCenter[512];
     char messageChat[512];
-    Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayWinnerAnnouncement_Center", winner, g_cPrize);
-    Format(messageChat, sizeof(messageChat), "%t", "GiveawayWinnerAnnouncement_Chat", winner, g_cPrize);
+    if (g_cPrize[0] == '\0') {
+      Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayWinnerAnnouncement_Center_NoPrize", winner);
+      Format(messageChat, sizeof(messageChat), "%t", "GiveawayWinnerAnnouncement_Chat_NoPrize", winner);
+    }
+    else {
+      Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayWinnerAnnouncement_Center", winner, g_cPrize);
+      Format(messageChat, sizeof(messageChat), "%t", "GiveawayWinnerAnnouncement_Chat", winner, g_cPrize);
+    }
     ShowSynchronizedHudText(messageCenter);
     MC_PrintToChatAll(messageChat);
     
@@ -295,6 +301,8 @@ public Action CMD_CancelGiveaway(int client, int args) {
   // Cancel giveaway
   g_bActiveGiveaway = false;
   g_alParticipants.Clear();
+  g_iGiveawayCreator = 0;
+  g_cPrize[0] = '\0';
   
   // Announce
   char messageCenter[512];
@@ -462,8 +470,13 @@ bool CanParticipate(int client) {
 void SendWinnerMenu(int client) {
   Panel panel = new Panel();
   char panelTitle[64], panelBody[256], exitString[32];
-  Format(panelTitle, sizeof(panelTitle), "%t", "GiveawayWinner_MenuTitle", client, g_cPrize);
-  Format(panelBody, sizeof(panelBody), "%t", "GiveawayWinner_MenuBody", client, g_cPrize);
+  Format(panelTitle, sizeof(panelTitle), "%t", "GiveawayWinner_MenuTitle");
+  if (g_cPrize[0] == '\0') {
+    Format(panelBody, sizeof(panelBody), "%t", "GiveawayWinner_MenuBody_NoPrize", client);
+  }
+  else {
+    Format(panelBody, sizeof(panelBody), "%t", "GiveawayWinner_MenuBody", client, g_cPrize);
+  }
   Format(exitString, sizeof(exitString), "%t", "Exit");
   panel.SetTitle(panelTitle);
   panel.DrawText(" ");
