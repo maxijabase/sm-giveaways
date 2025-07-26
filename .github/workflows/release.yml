@@ -26,7 +26,7 @@ jobs:
 
     - name: Compile plugins
       run: |
-        cd ./scripting
+        cd ./addons/sourcemod/scripting
         pwd
         spcomp -i"./include/" giveaways.sp -o ../plugins/giveaways.smx
         ls -la
