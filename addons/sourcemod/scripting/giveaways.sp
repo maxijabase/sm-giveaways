@@ -130,6 +130,7 @@ public Action CMD_CreateGiveaway(int client, int args) {
   
   int time = g_cvGiveawayTime.IntValue;
   
+  char arg[128];
   GetCmdArgString(arg, sizeof(arg));
   TrimString(arg);
   
