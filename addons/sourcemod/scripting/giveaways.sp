@@ -6,7 +6,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.4.1"
+#define PLUGIN_VERSION "1.4.2"
 #define HUD_DISPLAY_TIME 15.0
 #define HUD_FADE_IN 0.1
 #define HUD_FADE_OUT 0.2
@@ -130,8 +130,6 @@ public Action CMD_CreateGiveaway(int client, int args) {
   
   int time = g_cvGiveawayTime.IntValue;
   
-  // Get prize string
-  char arg[64];
   GetCmdArgString(arg, sizeof(arg));
   TrimString(arg);
   
