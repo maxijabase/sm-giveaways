@@ -1,5 +1,98 @@
 "Phrases"
 {
+	"GiveawayUsageHint"
+	{
+		"en" "{yellow}[Giveaways!]{default} Usage: !gstart <N> \"<prize1>\" \"<prize2>\" ... (N prizes for N winners). Legacy: !gstart <prize name>"
+		"es" "{yellow}[Sorteos]{default} Uso: !gstart <N> \"<premio1>\" \"<premio2>\" ... (N premios para N ganadores). Legado: !gstart <nombre del premio>"
+		"ru" "{yellow}[Розыгрыш призов!]{default} Использование: !gstart <N> \"<приз1>\" \"<приз2>\" ... (N призов для N победителей). Обычный: !gstart <название приза>"
+	}
+	"GiveawayArgsMismatch"
+	{
+		"#format" "{1:d},{2:d}"
+		"en" "{yellow}[Giveaways!]{default} Arg mismatch: declared {1} winner(s) but provided {2} prize(s)."
+		"es" "{yellow}[Sorteos]{default} Error de argumentos: se declararon {1} ganador(es) pero se proporcionaron {2} premio(s)."
+		"ru" "{yellow}[Розыгрыш призов!]{default} Несоответствие аргументов: объявлено {1} победитель(ей), но предоставлено {2} приз(ов)."
+	}
+	"GiveawayTooManyWinners"
+	{
+		"#format" "{1:d},{2:d}"
+		"en" "{yellow}[Giveaways!]{default} Cannot have {1} winner(s) with only {2} human player(s) in game."
+		"es" "{yellow}[Sorteos]{default} No se pueden tener {1} ganador(es) con solo {2} jugador(es) humano(s) en el juego."
+		"ru" "{yellow}[Розыгрыш призов!]{default} Невозможно иметь {1} победитель(ей) при только {2} живом(ых) игроке(ах)."
+	}
+	"GiveawayConfirmPanel_Title"
+	{
+		"en" "Confirm Giveaway"
+		"es" "Confirmar sorteo"
+		"ru" "Подтвердить розыгрыш"
+	}
+	"GiveawayConfirmPanel_Winners"
+	{
+		"#format" "{1:d}"
+		"en" "Winners: {1}"
+		"es" "Ganadores: {1}"
+		"ru" "Победителей: {1}"
+	}
+	"GiveawayConfirmPanel_PrizesHeader"
+	{
+		"en" "Prizes:"
+		"es" "Premios:"
+		"ru" "Призы:"
+	}
+	"GiveawayConfirmPanel_Launch"
+	{
+		"en" "Launch"
+		"es" "Iniciar"
+		"ru" "Запустить"
+	}
+	"GiveawayConfirmPanel_Cancel"
+	{
+		"en" "Cancel"
+		"es" "Cancelar"
+		"ru" "Отмена"
+	}
+	"GiveawayStarting_Center_Multi"
+	{
+		"#format" "{1:d},{2:d}"
+		"en" "GIVEAWAY: {1} PRIZES! ENDS IN {2} SEC! TYPE !enter!"
+		"es" "¡SORTEO: {1} PREMIOS! ¡TERMINA EN {2} SEG! ¡ESCRIBE !enter!"
+		"ru" "РОЗЫГРЫШ: {1} ПРИЗОВ! ЗАКАНЧИВАЕТСЯ ЧЕРЕЗ {2} СЕК! ВВЕДИТЕ !enter!"
+	}
+	"GiveawayStarting_Chat_Multi"
+	{
+		"#format" "{1:d},{2:d}"
+		"en" "{yellow}[Giveaways!] {orange}GIVEAWAY WITH {1} PRIZES JUST STARTED!{default} It will end in {orange}{2}{default} seconds. Type {orange}!enter{default} to participate!"
+		"es" "{yellow}[Sorteos] {orange}¡EMPEZÓ UN SORTEO CON {1} PREMIOS!{default} Termina en {orange}{2}{default} segundos. ¡Escribí {orange}!enter{default} para participar!"
+		"ru" "{yellow}[Розыгрыш призов!] {orange}НАЧАЛСЯ РОЗЫГРЫШ С {1} ПРИЗАМИ!{default} Он закончится через {orange}{2}{default} сек. Введите {orange}!enter{default} для участия!"
+	}
+	"GiveawayStarting_Chat_PrizeLine"
+	{
+		"#format" "{1:d},{2:s}"
+		"en" "{yellow}[Giveaways!]{default}   {1}. {azure}{2}"
+		"es" "{yellow}[Sorteos]{default}   {1}. {azure}{2}"
+		"ru" "{yellow}[Розыгрыш призов!]{default}   {1}. {azure}{2}"
+	}
+	"GiveawayWinnerAnnouncement_Center_Multi"
+	{
+		"#format" "{1:d}"
+		"en" "WINNERS DRAWN! SEE CHAT FOR DETAILS"
+		"es" "¡GANADORES SELECCIONADOS! VER CHAT PARA DETALLES"
+		"ru" "ПОБЕДИТЕЛИ ВЫБРАНЫ! СМОТРИТЕ ЧАТ ДЛЯ ПОДРОБНОСТЕЙ"
+	}
+	"GiveawayWinnerAnnouncement_Chat_Multi_Header"
+	{
+		"#format" "{1:d}"
+		"en" "{yellow}[Giveaways!]{default} {1} WINNER(S) DRAWN:"
+		"es" "{yellow}[Sorteos]{default} ¡{1} GANADOR(ES) SELECCIONADO(S):"
+		"ru" "{yellow}[Розыгрыш призов!]{default} ВЫБРАНО {1} ПОБЕДИТЕЛЬ(ЕЙ):"
+	}
+	"GiveawayWinnerAnnouncement_Chat_Multi_Line"
+	{
+		"#format" "{1:N},{2:s}"
+		"en" "{yellow}[Giveaways!]{default}   {yellow}{1}{default} → {azure}{2}"
+		"es" "{yellow}[Sorteos]{default}   {yellow}{1}{default} → {azure}{2}"
+		"ru" "{yellow}[Розыгрыш призов!]{default}   {yellow}{1}{default} → {azure}{2}"
+	}
 	"GiveawayStarting_Center"
 	{
 		"#format" "{1:d}"

@@ -6,10 +6,11 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.4.2"
+#define PLUGIN_VERSION "2.0.0"
 #define HUD_DISPLAY_TIME 15.0
 #define HUD_FADE_IN 0.1
 #define HUD_FADE_OUT 0.2
+#define PRIZE_MAX 128
 
 #define UPDATE_URL "https://raw.githubusercontent.com/maxijabase/sm-giveaways/master/updatefile.txt"
 
@@ -40,7 +41,8 @@ bool g_bActiveGiveaway = false;
 bool g_bSuspensePlayed = false;
 int g_iCountdownInterval;
 int g_iGiveawayCreator;
-char g_cPrize[128];
+ArrayList g_alPrizes;
+int g_iWinnersWanted = 1;
 ArrayList g_alParticipants;
 StringMap g_smPastWinners;
 
@@ -84,6 +86,7 @@ public void OnPluginStart() {
   g_cvHudA = AutoExecConfig_CreateConVar("sm_giveaways_hud_a", "255", "Alpha/transparency for HUD (0-255)");
   
   RegAdminCmd("sm_gstart", CMD_CreateGiveaway, ADMFLAG_GENERIC, "Starts a giveaway");
+  RegAdminCmd("sm_gstart_now", CMD_CreateGiveawayConfirmed, ADMFLAG_GENERIC, "Internal: start giveaway with pre-confirmed args (bot wizard)");
   RegAdminCmd("sm_gstop", CMD_StopGiveaway, ADMFLAG_GENERIC, "Stops the current giveaway");
   RegAdminCmd("sm_gcancel", CMD_CancelGiveaway, ADMFLAG_GENERIC, "Cancels the current giveaway");
   RegAdminCmd("sm_gparticipants", CMD_Participants, ADMFLAG_GENERIC, "Shows the participants of the current giveaway.");
@@ -93,6 +96,7 @@ public void OnPluginStart() {
   RegConsoleCmd("sm_entrar", CMD_Enter, "Enter the giveaway!");
   RegConsoleCmd("sm_leave", CMD_Leave, "Leave the giveaway!");
   
+  g_alPrizes = new ArrayList(ByteCountToCells(PRIZE_MAX + 1));
   g_alParticipants = new ArrayList();
   g_smPastWinners = new StringMap();
   g_hHudSync = CreateHudSynchronizer();
@@ -119,60 +123,53 @@ public void OnMapStart() {
 public void OnMapEnd() {
   g_alParticipants.Clear();
   g_smPastWinners.Clear();
+  g_alPrizes.Clear();
+  g_iWinnersWanted = 1;
 }
 
 public Action CMD_CreateGiveaway(int client, int args) {
-  // Check for current giveaway
   if (g_bActiveGiveaway) {
-    MC_ReplyToCommand(client, "%t", "GiveawayInProgress");
+    MC_ReplyToCommand(client, "%T", "GiveawayInProgress", client);
     return Plugin_Handled;
   }
   
-  int time = g_cvGiveawayTime.IntValue;
+  char argStr[512];
+  GetCmdArgString(argStr, sizeof(argStr));
+  TrimString(argStr);
   
-  char arg[128];
-  GetCmdArgString(arg, sizeof(arg));
-  TrimString(arg);
-  
-  // Check forward
-  if (!Forward_OnGiveawayStart(client, arg)) {
+  if (!Forward_OnGiveawayStart(client, argStr)) {
     return Plugin_Handled;
   }
   
-  // Format messages
-  char messageCenter[512];
-  char messageChat[512];
-  if (arg[0] == '\0') {
-    Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayStarting_Center", time);
-    Format(messageChat, sizeof(messageChat), "%t", "GiveawayStarting_Chat", time);
-  }
-  else {
-    Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayStarting_Center_Prize", arg, time);
-    Format(messageChat, sizeof(messageChat), "%t", "GiveawayStarting_Chat_Prize", arg, time);
+  if (args == 0) {
+    MC_ReplyToCommand(client, "%T", "GiveawayUsageHint", client);
+    return Plugin_Handled;
   }
   
-  // Set buffers
-  g_bActiveGiveaway = true;
-  g_bSuspensePlayed = false;
-  g_iGiveawayCreator = GetClientUserId(client);
-  strcopy(g_cPrize, sizeof(g_cPrize), arg);
-  
-  // Send messages
-  ShowSynchronizedHudText(messageCenter);
-  MC_PrintToChatAll(messageChat);
-  
-  // Send sounds if enabled
-  PlaySound("giveaway_starting.wav");
-  
-  // Enable direct timer or countdown timer depending on cvar setting
-  if (g_cvCountdown.BoolValue) {
-    g_iCountdownInterval = time;
-    CreateTimer(1.0, Timer_CountdownCallback, _, TIMER_REPEAT);
-  }
-  else {
-    CreateTimer(g_cvGiveawayTime.FloatValue, Timer_EndCallback);
+  if (!ParseAndSetGiveawayPrizes(client, args)) {
+    return Plugin_Handled;
   }
   
+  ShowGiveawayConfirmPanel(client);
+  return Plugin_Handled;
+}
+
+public Action CMD_CreateGiveawayConfirmed(int client, int args) {
+  if (g_bActiveGiveaway) {
+    MC_ReplyToCommand(client, "%T", "GiveawayInProgress", client);
+    return Plugin_Handled;
+  }
+  
+  if (args == 0) {
+    MC_ReplyToCommand(client, "%T", "GiveawayUsageHint", client);
+    return Plugin_Handled;
+  }
+  
+  if (!ParseAndSetGiveawayPrizes(client, args)) {
+    return Plugin_Handled;
+  }
+  
+  BeginGiveawayTimer(client);
   return Plugin_Handled;
 }
 
@@ -198,199 +195,269 @@ public Action Timer_CountdownCallback(Handle timer) {
       PlaySound("giveaway_suspense.wav");
       g_bSuspensePlayed = true;
     }
-    char messageCenter[512];
-    char messageChat[512];
-    Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayCountdown_Center", g_iCountdownInterval);
-    Format(messageChat, sizeof(messageChat), "%t", "GiveawayCountdown_Chat", g_iCountdownInterval);
-    ShowSynchronizedHudText(messageCenter);
-    MC_PrintToChatAll(messageChat);
+    
+    SetupHudParams();
+    for (int i = 1; i <= MaxClients; i++) {
+      if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+      char hudMsg[256];
+      Format(hudMsg, sizeof(hudMsg), "%T", "GiveawayCountdown_Center", i, g_iCountdownInterval);
+      ShowSyncHudText(i, g_hHudSync, hudMsg);
+    }
+    for (int i = 1; i <= MaxClients; i++) {
+      if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+      char chatMsg[512];
+      Format(chatMsg, sizeof(chatMsg), "%T", "GiveawayCountdown_Chat", i, g_iCountdownInterval);
+      MC_PrintToChat(i, "%s", chatMsg);
+    }
   }
   g_iCountdownInterval--;
   return Plugin_Continue;
 }
 
 public Action CMD_StopGiveaway(int client, int args) {
-  // Check if there's an ongoing giveaway
   if (!g_bActiveGiveaway) {
-    MC_ReplyToCommand(client, "%t", "GiveawayNone");
+    MC_ReplyToCommand(client, "%T", "GiveawayNone", client);
     return Plugin_Handled;
   }
   
-  int random, winner;
-  
-  // Filter out people that are not supposed to be participating
   FilterParticipants();
   
-  // Check if there are potential winners
   if (g_alParticipants.Length == 0) {
-    char messageCenter[512];
-    char messageChat[512];
-    Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayNoWinners_Center");
-    Format(messageChat, sizeof(messageChat), "%t", "GiveawayNoWinners_Chat");
-    ShowSynchronizedHudText(messageCenter);
-    MC_PrintToChatAll(messageChat);
-    
-    // Play sound if enabled
+    SetupHudParams();
+    for (int i = 1; i <= MaxClients; i++) {
+      if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+      char hudMsg[256];
+      Format(hudMsg, sizeof(hudMsg), "%T", "GiveawayNoWinners_Center", i);
+      ShowSyncHudText(i, g_hHudSync, hudMsg);
+    }
+    for (int i = 1; i <= MaxClients; i++) {
+      if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+      char chatMsg[512];
+      Format(chatMsg, sizeof(chatMsg), "%T", "GiveawayNoWinners_Chat", i);
+      MC_PrintToChat(i, "%s", chatMsg);
+    }
     PlaySound("giveaway_canceled.wav");
   }
   else {
-    // Get winner
-    do {
-      random = GetRandomInt(0, g_alParticipants.Length - 1);
-      winner = GetClientOfUserId(g_alParticipants.Get(random));
-    } while (winner == 0);
+    int effectiveN = (g_iWinnersWanted < g_alParticipants.Length) ? g_iWinnersWanted : g_alParticipants.Length;
     
-    // Announce winner
-    char messageCenter[512];
-    char messageChat[512];
-    if (g_cPrize[0] == '\0') {
-      Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayWinnerAnnouncement_Center_NoPrize", winner);
-      Format(messageChat, sizeof(messageChat), "%t", "GiveawayWinnerAnnouncement_Chat_NoPrize", winner);
+    ArrayList winners = new ArrayList();
+    ArrayList pool = g_alParticipants.Clone();
+    while (winners.Length < effectiveN && pool.Length > 0) {
+      int idx = GetRandomInt(0, pool.Length - 1);
+      int uid = pool.Get(idx);
+      pool.Erase(idx);
+      int cl = GetClientOfUserId(uid);
+      if (cl != 0) {
+        winners.Push(cl);
+      }
     }
-    else {
-      Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayWinnerAnnouncement_Center", winner, g_cPrize);
-      Format(messageChat, sizeof(messageChat), "%t", "GiveawayWinnerAnnouncement_Chat", winner, g_cPrize);
-    }
-    ShowSynchronizedHudText(messageCenter);
-    MC_PrintToChatAll(messageChat);
+    delete pool;
+    effectiveN = winners.Length;
     
-    // Play sound if enabled
-    PlaySound("giveaway_end.wav");
-    
-    // Send info menu to winner if enabled
-    if (g_cvSendMenuToWinner.BoolValue) {
-      SendWinnerMenu(winner);
+    // Fisher-Yates shuffle of prizes
+    for (int i = g_alPrizes.Length - 1; i > 0; i--) {
+      int j = GetRandomInt(0, i);
+      char tmp1[PRIZE_MAX + 1], tmp2[PRIZE_MAX + 1];
+      g_alPrizes.GetString(i, tmp1, sizeof(tmp1));
+      g_alPrizes.GetString(j, tmp2, sizeof(tmp2));
+      g_alPrizes.SetString(i, tmp2);
+      g_alPrizes.SetString(j, tmp1);
     }
     
-    // Add winner to cooldown list if enabled
-    if (g_cvWinnerCooldown.IntValue > 0) {
+    int creator = GetClientOfUserId(g_iGiveawayCreator);
+    int totalParticipants = g_alParticipants.Length;
+    
+    if (effectiveN == 1) {
+      int winner = winners.Get(0);
+      char prize[PRIZE_MAX + 1];
+      bool hasPrize = g_alPrizes.Length > 0;
+      if (hasPrize) {
+        g_alPrizes.GetString(0, prize, sizeof(prize));
+      }
+      
+      SetupHudParams();
+      for (int i = 1; i <= MaxClients; i++) {
+        if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+        char hudMsg[256];
+        if (hasPrize) {
+          Format(hudMsg, sizeof(hudMsg), "%T", "GiveawayWinnerAnnouncement_Center", i, winner, prize);
+        }
+        else {
+          Format(hudMsg, sizeof(hudMsg), "%T", "GiveawayWinnerAnnouncement_Center_NoPrize", i, winner);
+        }
+        ShowSyncHudText(i, g_hHudSync, hudMsg);
+      }
+      for (int i = 1; i <= MaxClients; i++) {
+        if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+        char chatMsg[512];
+        if (hasPrize) {
+          Format(chatMsg, sizeof(chatMsg), "%T", "GiveawayWinnerAnnouncement_Chat", i, winner, prize);
+        }
+        else {
+          Format(chatMsg, sizeof(chatMsg), "%T", "GiveawayWinnerAnnouncement_Chat_NoPrize", i, winner);
+        }
+        MC_PrintToChat(i, "%s", chatMsg);
+      }
+      
       char steamid[32];
       GetClientAuthId(winner, AuthId_Steam2, steamid, sizeof(steamid));
       g_smPastWinners.SetValue(steamid, 0);
+      
+      Forward_OnGiveawayEnded(creator, winner, totalParticipants, prize);
+      
+      if (g_cvSendMenuToWinner.BoolValue) {
+        SendWinnerMenu(winner, prize);
+      }
     }
+    else {
+      SetupHudParams();
+      for (int i = 1; i <= MaxClients; i++) {
+        if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+        char hudMsg[256];
+        Format(hudMsg, sizeof(hudMsg), "%T", "GiveawayWinnerAnnouncement_Center_Multi", i, effectiveN);
+        ShowSyncHudText(i, g_hHudSync, hudMsg);
+      }
+      for (int i = 1; i <= MaxClients; i++) {
+        if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+        char chatMsg[512];
+        Format(chatMsg, sizeof(chatMsg), "%T", "GiveawayWinnerAnnouncement_Chat_Multi_Header", i, effectiveN);
+        MC_PrintToChat(i, "%s", chatMsg);
+      }
+      
+      for (int w = 0; w < effectiveN; w++) {
+        int winner = winners.Get(w);
+        char prize[PRIZE_MAX + 1];
+        bool hasPrize = w < g_alPrizes.Length;
+        if (hasPrize) {
+          g_alPrizes.GetString(w, prize, sizeof(prize));
+        }
+        
+        for (int i = 1; i <= MaxClients; i++) {
+          if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+          char chatLine[512];
+          Format(chatLine, sizeof(chatLine), "%T", "GiveawayWinnerAnnouncement_Chat_Multi_Line", i, winner, prize);
+          MC_PrintToChat(i, "%s", chatLine);
+        }
+        
+        char steamid[32];
+        GetClientAuthId(winner, AuthId_Steam2, steamid, sizeof(steamid));
+        g_smPastWinners.SetValue(steamid, 0);
+        
+        Forward_OnGiveawayEnded(creator, winner, totalParticipants, prize);
+        
+        if (g_cvSendMenuToWinner.BoolValue) {
+          SendWinnerMenu(winner, prize);
+        }
+      }
+    }
+    
+    PlaySound("giveaway_end.wav");
+    delete winners;
   }
   
-  // Send forward
-  Forward_OnGiveawayEnded(GetClientOfUserId(g_iGiveawayCreator), winner, g_alParticipants.Length, g_cPrize);
-  
-  // Advance cooldowns
   AdvanceCooldowns();
   
-  // Set flags and buffers
   g_bActiveGiveaway = false;
   g_alParticipants.Clear();
   g_iGiveawayCreator = 0;
-  g_cPrize[0] = '\0';
+  g_alPrizes.Clear();
+  g_iWinnersWanted = 1;
   
   return Plugin_Handled;
 }
 
 public Action CMD_CancelGiveaway(int client, int args) {
-  // Check forward
   if (!Forward_OnGiveawayCancel(GetClientOfUserId(g_iGiveawayCreator), client)) {
     return Plugin_Handled;
   }
   
-  // Check if there's an ongoing giveaway
   if (!g_bActiveGiveaway) {
-    MC_ReplyToCommand(client, "%t", "GiveawayNone");
+    MC_ReplyToCommand(client, "%T", "GiveawayNone", client);
     return Plugin_Handled;
   }
   
-  // Cancel giveaway
   g_bActiveGiveaway = false;
   g_alParticipants.Clear();
   g_iGiveawayCreator = 0;
-  g_cPrize[0] = '\0';
+  g_alPrizes.Clear();
+  g_iWinnersWanted = 1;
   
-  // Announce
-  char messageCenter[512];
-  char messageChat[512];
-  Format(messageCenter, sizeof(messageCenter), "%t", "GiveawayCanceled_Center");
-  Format(messageChat, sizeof(messageChat), "%t", "GiveawayCanceled_Chat");
-  ShowSynchronizedHudText(messageCenter);
-  MC_PrintToChatAll(messageChat);
+  SetupHudParams();
+  for (int i = 1; i <= MaxClients; i++) {
+    if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+    char hudMsg[256];
+    Format(hudMsg, sizeof(hudMsg), "%T", "GiveawayCanceled_Center", i);
+    ShowSyncHudText(i, g_hHudSync, hudMsg);
+  }
+  for (int i = 1; i <= MaxClients; i++) {
+    if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+    char chatMsg[512];
+    Format(chatMsg, sizeof(chatMsg), "%T", "GiveawayCanceled_Chat", i);
+    MC_PrintToChat(i, "%s", chatMsg);
+  }
   
-  // Play sound if enables
   PlaySound("giveaway_canceled.wav");
   
   return Plugin_Handled;
 }
 
 public Action CMD_Enter(int client, int args) {
-  // Check forward
   if (!Forward_OnClientEnter(client)) {
     return Plugin_Handled;
   }
   
-  // Check for current giveaways
   if (!g_bActiveGiveaway) {
-    MC_ReplyToCommand(client, "%t", "GiveawayNone");
+    MC_ReplyToCommand(client, "%T", "GiveawayNone", client);
     return Plugin_Handled;
   }
   
-  // Check if he's already participating
   int userid = GetClientUserId(client);
   if (g_alParticipants.FindValue(userid) != -1) {
-    MC_ReplyToCommand(client, "%t", "GiveawayAlreadyParticipating");
+    MC_ReplyToCommand(client, "%T", "GiveawayAlreadyParticipating", client);
     return Plugin_Handled;
   }
   
-  // Push to participants list
   g_alParticipants.Push(userid);
-  
-  // Announce participance
-  MC_ReplyToCommand(client, "%t", "GiveawayEntered");
-  
-  // Play sound if enabled
+  MC_ReplyToCommand(client, "%T", "GiveawayEntered", client);
   PlaySound("giveaway_entered.wav", client);
   
   return Plugin_Handled;
 }
 
 public Action CMD_Leave(int client, int args) {
-  // Check forward
   if (!Forward_OnClientLeave(client)) {
     return Plugin_Handled;
   }
   
-  // Check for current giveaway
   if (!g_bActiveGiveaway) {
-    MC_ReplyToCommand(client, "%t", "GiveawayNone");
+    MC_ReplyToCommand(client, "%T", "GiveawayNone", client);
     return Plugin_Handled;
   }
   
   int participant = g_alParticipants.FindValue(GetClientUserId(client));
   
-  // Check if he was participating
   if (participant == -1) {
-    MC_ReplyToCommand(client, "%t", "GiveawayNotParticipating");
+    MC_ReplyToCommand(client, "%T", "GiveawayNotParticipating", client);
     return Plugin_Handled;
   }
   
-  // Delete him from participants
   g_alParticipants.Erase(participant);
-  
-  // Play sound if enabled
   PlaySound("giveaway_canceled.wav", client);
-  
-  // Inform
-  MC_ReplyToCommand(client, "%t", "GiveawayLeft");
+  MC_ReplyToCommand(client, "%T", "GiveawayLeft", client);
   return Plugin_Handled;
 }
 
 public Action CMD_Participants(int client, int args) {
-  // Check for current giveaway
   if (!g_bActiveGiveaway) {
-    MC_ReplyToCommand(client, "%t", "GiveawayNone");
+    MC_ReplyToCommand(client, "%T", "GiveawayNone", client);
     return Plugin_Handled;
   }
   
   int participants = g_alParticipants.Length;
   
-  // Check for participants
   if (participants == 0) {
-    MC_ReplyToCommand(client, "%t", "GiveawayNoParticipants");
+    MC_ReplyToCommand(client, "%T", "GiveawayNoParticipants", client);
     return Plugin_Handled;
   }
   
@@ -409,30 +476,254 @@ public Action CMD_Participants(int client, int args) {
 
 public int EmptyMenu(Menu menu, MenuAction action, int param1, int param2) { return 0; }
 
+public int ConfirmPanelHandler(Menu menu, MenuAction action, int param1, int param2) {
+  if (action == MenuAction_Select) {
+    if (param2 == 1) {
+      BeginGiveawayTimer(param1);
+    }
+    else {
+      g_alPrizes.Clear();
+      g_iWinnersWanted = 1;
+    }
+  }
+  else if (action == MenuAction_Cancel) {
+    g_alPrizes.Clear();
+    g_iWinnersWanted = 1;
+  }
+  return 0;
+}
+
 void PlaySound(char[] sound, int client = 0) {
   if (g_cvPlaySounds.BoolValue) {
     client ? EmitSoundToClient(client, sound) : EmitSoundToAll(sound);
   }
 }
 
+void SetupHudParams() {
+  SetHudTextParams(
+    g_cvHudX.FloatValue, g_cvHudY.FloatValue,
+    HUD_DISPLAY_TIME,
+    g_cvHudR.IntValue, g_cvHudG.IntValue, g_cvHudB.IntValue, g_cvHudA.IntValue,
+    1, HUD_FADE_IN, 0.0, HUD_FADE_OUT
+  );
+}
+
+bool IsIntegerString(const char[] s) {
+  if (s[0] == '\0') return false;
+  for (int i = 0; s[i] != '\0'; i++) {
+    if (s[i] < '0' || s[i] > '9') return false;
+  }
+  return true;
+}
+
+int CountHumans() {
+  int n = 0;
+  for (int i = 1; i <= MaxClients; i++) {
+    if (IsClientInGame(i) && !IsFakeClient(i) && !IsClientReplay(i) && !IsClientSourceTV(i)) {
+      n++;
+    }
+  }
+  return n;
+}
+
+bool ParseAndSetGiveawayPrizes(int client, int args) {
+  char firstArg[64];
+  GetCmdArg(1, firstArg, sizeof(firstArg));
+  
+  if (IsIntegerString(firstArg)) {
+    int numWinners = StringToInt(firstArg);
+    if (numWinners <= 0) {
+      MC_ReplyToCommand(client, "%T", "GiveawayUsageHint", client);
+      return false;
+    }
+    int remainingArgs = args - 1;
+    if (remainingArgs != numWinners) {
+      MC_ReplyToCommand(client, "%T", "GiveawayArgsMismatch", client, numWinners, remainingArgs);
+      return false;
+    }
+    int humans = CountHumans();
+    if (numWinners > humans) {
+      MC_ReplyToCommand(client, "%T", "GiveawayTooManyWinners", client, numWinners, humans);
+      return false;
+    }
+    
+    g_alPrizes.Clear();
+    for (int i = 2; i <= args; i++) {
+      char prize[PRIZE_MAX + 1];
+      GetCmdArg(i, prize, sizeof(prize));
+      g_alPrizes.PushString(prize);
+    }
+    g_iWinnersWanted = numWinners;
+  }
+  else {
+    char argStr[512];
+    GetCmdArgString(argStr, sizeof(argStr));
+    TrimString(argStr);
+    g_alPrizes.Clear();
+    if (argStr[0] != '\0') {
+      char prize[PRIZE_MAX + 1];
+      strcopy(prize, sizeof(prize), argStr);
+      g_alPrizes.PushString(prize);
+    }
+    g_iWinnersWanted = 1;
+  }
+  
+  return true;
+}
+
+void BeginGiveawayTimer(int client) {
+  if (g_bActiveGiveaway) {
+    MC_PrintToChat(client, "%T", "GiveawayInProgress", client);
+    g_alPrizes.Clear();
+    g_iWinnersWanted = 1;
+    return;
+  }
+  
+  int time = g_cvGiveawayTime.IntValue;
+  
+  g_bActiveGiveaway = true;
+  g_bSuspensePlayed = false;
+  g_iGiveawayCreator = GetClientUserId(client);
+  
+  bool hasPrize = g_alPrizes.Length > 0;
+  bool isMulti = g_alPrizes.Length > 1;
+  
+  SetupHudParams();
+  
+  if (!hasPrize) {
+    for (int i = 1; i <= MaxClients; i++) {
+      if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+      char hudMsg[256];
+      Format(hudMsg, sizeof(hudMsg), "%T", "GiveawayStarting_Center", i, time);
+      ShowSyncHudText(i, g_hHudSync, hudMsg);
+    }
+    for (int i = 1; i <= MaxClients; i++) {
+      if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+      char chatMsg[512];
+      Format(chatMsg, sizeof(chatMsg), "%T", "GiveawayStarting_Chat", i, time);
+      MC_PrintToChat(i, "%s", chatMsg);
+    }
+  }
+  else if (!isMulti) {
+    char prize[PRIZE_MAX + 1];
+    g_alPrizes.GetString(0, prize, sizeof(prize));
+    
+    for (int i = 1; i <= MaxClients; i++) {
+      if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+      char hudMsg[256];
+      Format(hudMsg, sizeof(hudMsg), "%T", "GiveawayStarting_Center_Prize", i, prize, time);
+      ShowSyncHudText(i, g_hHudSync, hudMsg);
+    }
+    for (int i = 1; i <= MaxClients; i++) {
+      if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+      char chatMsg[512];
+      Format(chatMsg, sizeof(chatMsg), "%T", "GiveawayStarting_Chat_Prize", i, prize, time);
+      MC_PrintToChat(i, "%s", chatMsg);
+    }
+  }
+  else {
+    for (int i = 1; i <= MaxClients; i++) {
+      if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+      char hudMsg[256];
+      Format(hudMsg, sizeof(hudMsg), "%T", "GiveawayStarting_Center_Multi", i, g_alPrizes.Length, time);
+      ShowSyncHudText(i, g_hHudSync, hudMsg);
+    }
+    for (int i = 1; i <= MaxClients; i++) {
+      if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+      char chatMsg[512];
+      Format(chatMsg, sizeof(chatMsg), "%T", "GiveawayStarting_Chat_Multi", i, g_alPrizes.Length, time);
+      MC_PrintToChat(i, "%s", chatMsg);
+      for (int p = 0; p < g_alPrizes.Length; p++) {
+        char prize[PRIZE_MAX + 1];
+        g_alPrizes.GetString(p, prize, sizeof(prize));
+        char prizeLine[192];
+        Format(prizeLine, sizeof(prizeLine), "%T", "GiveawayStarting_Chat_PrizeLine", i, p + 1, prize);
+        MC_PrintToChat(i, "%s", prizeLine);
+      }
+    }
+  }
+  
+  PlaySound("giveaway_starting.wav");
+  
+  if (g_cvCountdown.BoolValue) {
+    g_iCountdownInterval = time;
+    CreateTimer(1.0, Timer_CountdownCallback, _, TIMER_REPEAT);
+  }
+  else {
+    CreateTimer(g_cvGiveawayTime.FloatValue, Timer_EndCallback);
+  }
+}
+
+void ShowGiveawayConfirmPanel(int client) {
+  Panel panel = new Panel();
+  
+  char title[128];
+  Format(title, sizeof(title), "%T", "GiveawayConfirmPanel_Title", client);
+  panel.SetTitle(title);
+  
+  char winnersLine[128];
+  Format(winnersLine, sizeof(winnersLine), "%T", "GiveawayConfirmPanel_Winners", client, g_iWinnersWanted);
+  panel.DrawText(winnersLine);
+  
+  char prizesHeader[128];
+  Format(prizesHeader, sizeof(prizesHeader), "%T", "GiveawayConfirmPanel_PrizesHeader", client);
+  panel.DrawText(prizesHeader);
+  
+  for (int i = 0; i < g_alPrizes.Length; i++) {
+    char prize[PRIZE_MAX + 1];
+    g_alPrizes.GetString(i, prize, sizeof(prize));
+    char prizeLine[140];
+    Format(prizeLine, sizeof(prizeLine), "  %d. %s", i + 1, prize);
+    panel.DrawText(prizeLine);
+  }
+  
+  panel.DrawText(" ");
+  
+  char launchStr[64];
+  Format(launchStr, sizeof(launchStr), "%T", "GiveawayConfirmPanel_Launch", client);
+  char cancelStr[64];
+  Format(cancelStr, sizeof(cancelStr), "%T", "GiveawayConfirmPanel_Cancel", client);
+  
+  panel.DrawItem(launchStr);
+  panel.DrawItem(cancelStr);
+  
+  panel.Send(client, ConfirmPanelHandler, MENU_TIME_FOREVER);
+  delete panel;
+}
+
+void SendWinnerMenu(int client, const char[] prize) {
+  Panel panel = new Panel();
+  char panelTitle[64], panelBody[512], exitString[32];
+  Format(panelTitle, sizeof(panelTitle), "%T", "GiveawayWinner_MenuTitle", client);
+  if (prize[0] == '\0') {
+    Format(panelBody, sizeof(panelBody), "%T", "GiveawayWinner_MenuBody_NoPrize", client, client);
+  }
+  else {
+    Format(panelBody, sizeof(panelBody), "%T", "GiveawayWinner_MenuBody", client, client, prize);
+  }
+  Format(exitString, sizeof(exitString), "%T", "Exit", client);
+  panel.SetTitle(panelTitle);
+  panel.DrawText(" ");
+  panel.DrawText(panelBody);
+  panel.DrawText(" ");
+  panel.CurrentKey = 10;
+  panel.DrawItem(exitString);
+  panel.Send(client, EmptyMenu, MENU_TIME_FOREVER);
+  delete panel;
+}
+
 void AdvanceCooldowns() {
-  // Advance cooldown in past winners (thanks Doggy for the snippet)
   StringMapSnapshot snapshot = g_smPastWinners.Snapshot();
-  for (int i = 0; i < snapshot.Length; i++)
-  {
-    // Get key...
+  for (int i = 0; i < snapshot.Length; i++) {
     int bufferSize = snapshot.KeyBufferSize(i);
     char[] key = new char[bufferSize];
     snapshot.GetKey(i, key, bufferSize);
     
-    // ...to get value
     int value;
     g_smPastWinners.GetValue(key, value);
     
-    // Advance...
     int next = value + 1;
     
-    // If next is below cooldown, keep waiting, otherwise he's free to go
     if (next < g_cvWinnerCooldown.IntValue) {
       g_smPastWinners.SetValue(key, next);
     }
@@ -445,66 +736,23 @@ void AdvanceCooldowns() {
 
 void FilterParticipants() {
   for (int i = 0; i < g_alParticipants.Length; i++) {
-    int client = GetClientOfUserId(g_alParticipants.Get(i));
-    if (!CanParticipate(client)) {
+    int cl = GetClientOfUserId(g_alParticipants.Get(i));
+    if (!CanParticipate(cl)) {
       g_alParticipants.Erase(i);
     }
   }
 }
 
 bool CanParticipate(int client) {
-  // Get auth
   char steamid[32];
   GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid));
   
-  // And check if he's even won, and if he's still below cooldown
   int passed;
   if (g_smPastWinners.GetValue(steamid, passed)) {
     return passed >= g_cvWinnerCooldown.IntValue;
   }
   
   return true;
-}
-
-void SendWinnerMenu(int client) {
-  Panel panel = new Panel();
-  char panelTitle[64], panelBody[256], exitString[32];
-  Format(panelTitle, sizeof(panelTitle), "%t", "GiveawayWinner_MenuTitle");
-  if (g_cPrize[0] == '\0') {
-    Format(panelBody, sizeof(panelBody), "%t", "GiveawayWinner_MenuBody_NoPrize", client);
-  }
-  else {
-    Format(panelBody, sizeof(panelBody), "%t", "GiveawayWinner_MenuBody", client, g_cPrize);
-  }
-  Format(exitString, sizeof(exitString), "%t", "Exit");
-  panel.SetTitle(panelTitle);
-  panel.DrawText(" ");
-  panel.DrawText(panelBody);
-  panel.DrawText(" ");
-  panel.CurrentKey = 10;
-  panel.DrawItem(exitString);
-  panel.Send(client, EmptyMenu, MENU_TIME_FOREVER);
-}
-
-void ShowSynchronizedHudText(const char[] message, bool toAll = true, int client = 0) {
-  float x = g_cvHudX.FloatValue;
-  float y = g_cvHudY.FloatValue;
-  int r = g_cvHudR.IntValue;
-  int g = g_cvHudG.IntValue;
-  int b = g_cvHudB.IntValue;
-  int a = g_cvHudA.IntValue;
-  
-  SetHudTextParams(x, y, HUD_DISPLAY_TIME, r, g, b, a, 1, 0.0, 0.0, 0.2);
-  
-  if(toAll) {
-    for(int i = 1; i <= MaxClients; i++) {
-      if(IsClientInGame(i) && !IsFakeClient(i)) {
-        ShowSyncHudText(i, g_hHudSync, message);
-      }
-    }
-  } else if(IsClientInGame(client)) {
-    ShowSyncHudText(client, g_hHudSync, message);
-  }
 }
 
 /* Forwards */
@@ -550,4 +798,4 @@ bool Forward_OnGiveawayCancel(int creator, int cancelator) {
   Call_PushCell(cancelator);
   Call_Finish(result);
   return result == Plugin_Continue;
-} 
+}
