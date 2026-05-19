@@ -6,7 +6,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.0.0"
+#define PLUGIN_VERSION "2.0.1"
 #define HUD_DISPLAY_TIME 15.0
 #define HUD_FADE_IN 0.1
 #define HUD_FADE_OUT 0.2
@@ -173,43 +173,62 @@ public Action CMD_CreateGiveawayConfirmed(int client, int args) {
   return Plugin_Handled;
 }
 
-public Action Timer_EndCallback(Handle timer) {
-  if (g_bActiveGiveaway) {
-    CMD_StopGiveaway(0, 0);
-  }
-  return Plugin_Continue;
-}
-
 public Action Timer_CountdownCallback(Handle timer) {
+  if (!g_bActiveGiveaway) {
+    return Plugin_Stop;
+  }
+  
   if (g_iCountdownInterval == 0) {
     CMD_StopGiveaway(0, 0);
     return Plugin_Stop;
   }
   
+  SetupHudParams();
+  
   if (g_iCountdownInterval <= 5) {
-    if (!g_bActiveGiveaway) {
-      return Plugin_Stop;
-    }
-    
     if (!g_bSuspensePlayed) {
       PlaySound("giveaway_suspense.wav");
       g_bSuspensePlayed = true;
     }
     
-    SetupHudParams();
     for (int i = 1; i <= MaxClients; i++) {
       if (!IsClientInGame(i) || IsFakeClient(i)) continue;
       char hudMsg[256];
       Format(hudMsg, sizeof(hudMsg), "%T", "GiveawayCountdown_Center", i, g_iCountdownInterval);
       ShowSyncHudText(i, g_hHudSync, hudMsg);
     }
-    for (int i = 1; i <= MaxClients; i++) {
-      if (!IsClientInGame(i) || IsFakeClient(i)) continue;
-      char chatMsg[512];
-      Format(chatMsg, sizeof(chatMsg), "%T", "GiveawayCountdown_Chat", i, g_iCountdownInterval);
-      MC_PrintToChat(i, "%s", chatMsg);
+    
+    if (g_cvCountdown.BoolValue) {
+      for (int i = 1; i <= MaxClients; i++) {
+        if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+        char chatMsg[512];
+        Format(chatMsg, sizeof(chatMsg), "%T", "GiveawayCountdown_Chat", i, g_iCountdownInterval);
+        MC_PrintToChat(i, "%s", chatMsg);
+      }
     }
   }
+  else {
+    bool hasPrize = g_alPrizes.Length > 0;
+    bool isMulti = g_alPrizes.Length > 1;
+    
+    for (int i = 1; i <= MaxClients; i++) {
+      if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+      char hudMsg[256];
+      if (!hasPrize) {
+        Format(hudMsg, sizeof(hudMsg), "%T", "GiveawayStarting_Center", i, g_iCountdownInterval);
+      }
+      else if (!isMulti) {
+        char prize[PRIZE_MAX + 1];
+        g_alPrizes.GetString(0, prize, sizeof(prize));
+        Format(hudMsg, sizeof(hudMsg), "%T", "GiveawayStarting_Center_Prize", i, prize, g_iCountdownInterval);
+      }
+      else {
+        Format(hudMsg, sizeof(hudMsg), "%T", "GiveawayStarting_Center_Multi", i, g_alPrizes.Length, g_iCountdownInterval);
+      }
+      ShowSyncHudText(i, g_hHudSync, hudMsg);
+    }
+  }
+  
   g_iCountdownInterval--;
   return Plugin_Continue;
 }
@@ -645,13 +664,8 @@ void BeginGiveawayTimer(int client) {
   
   PlaySound("giveaway_starting.wav");
   
-  if (g_cvCountdown.BoolValue) {
-    g_iCountdownInterval = time;
-    CreateTimer(1.0, Timer_CountdownCallback, _, TIMER_REPEAT);
-  }
-  else {
-    CreateTimer(g_cvGiveawayTime.FloatValue, Timer_EndCallback);
-  }
+  g_iCountdownInterval = time;
+  CreateTimer(1.0, Timer_CountdownCallback, _, TIMER_REPEAT);
 }
 
 void ShowGiveawayConfirmPanel(int client) {

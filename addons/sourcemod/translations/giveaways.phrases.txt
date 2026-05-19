@@ -54,9 +54,9 @@
 	"GiveawayStarting_Center_Multi"
 	{
 		"#format" "{1:d},{2:d}"
-		"en" "GIVEAWAY: {1} PRIZES! ENDS IN {2} SEC! TYPE !enter!"
-		"es" "¡SORTEO: {1} PREMIOS! ¡TERMINA EN {2} SEG! ¡ESCRIBE !enter!"
-		"ru" "РОЗЫГРЫШ: {1} ПРИЗОВ! ЗАКАНЧИВАЕТСЯ ЧЕРЕЗ {2} СЕК! ВВЕДИТЕ !enter!"
+		"en" "GIVEAWAY: {1} PRIZES!\nTYPE !enter!\nENDS IN {2}..."
+		"es" "¡SORTEO: {1} PREMIOS!\n¡Escribí !enter!\nTERMINA EN {2}..."
+		"ru" "РОЗЫГРЫШ: {1} ПРИЗОВ!\nВВЕДИТЕ !enter!\nЗАКАНЧИВАЕТСЯ ЧЕРЕЗ {2}..."
 	}
 	"GiveawayStarting_Chat_Multi"
 	{
@@ -96,16 +96,16 @@
 	"GiveawayStarting_Center"
 	{
 		"#format" "{1:d}"
-		"en" "A GIVEAWAY JUST STARTED AND WILL END IN {1} SECONDS! TYPE !enter TO HOP IN!"
-		"es" "¡EMPEZÓ UN SORTEO! COMIENZA EN {1} SEGUNDOS - ESCRIBÍ !enter PARA PARTICIPAR"
-		"ru" "РОЗЫГРЫШ ТОЛЬКО ЧТО НАЧАЛСЯ И ЗАКОНЧИТСЯ ЧЕРЕЗ {1} СЕК.! ВВЕДИТЕ !enter, ЧТОБЫ ВОЙТИ!"
+		"en" "A GIVEAWAY JUST STARTED!\nTYPE !enter TO PARTICIPATE!\nENDS IN {1}..."
+		"es" "¡EMPEZÓ UN SORTEO!\n¡Escribí !enter PARA PARTICIPAR!\nTERMINA EN {1}..."
+		"ru" "РОЗЫГРЫШ НАЧАЛСЯ!\nВВЕДИТЕ !enter ДЛЯ УЧАСТИЯ!\nЗАКАНЧИВАЕТСЯ ЧЕРЕЗ {1}..."
 	}
 	"GiveawayStarting_Center_Prize"
 	{
 		"#format" "{1:s},{2:d}"
-		"en" "A GIVEAWAY FOR A {1} STARTS IN {2} SECONDS! TYPE !enter AND DON'T MISS OUT!"
-		"es" "¡EMPEZÓ UN SORTEO! SE SORTEA UN/A {1}\nCOMIENZA EN {2} SEGUNDOS - ESCRIBÍ !enter PARA PARTICIPAR"
-		"ru" "РОЗЫГРЫШ НА {1} НАЧИНАЕТСЯ ЧЕРЕЗ {2} СЕК.! ВВЕДИТЕ !enter И НЕ ПРОПУСТИТЕ!"
+		"en" "A GIVEAWAY STARTED! PRIZE:\n{1}\nTYPE !enter TO PARTICIPATE! ENDS IN {2}..."
+		"es" "¡SORTEO INICIADO! PREMIO:\n{1}\n¡Escribí !enter PARA PARTICIPAR! TERMINA EN {2}..."
+		"ru" "РОЗЫГРЫШ НАЧАЛСЯ! ПРИЗ:\n{1}\nВВЕДИТЕ !enter ДЛЯ УЧАСТИЯ! ЧЕРЕЗ {2}..."
 	}
 	"GiveawayStarting_Chat"
 	{
