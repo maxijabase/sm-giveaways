@@ -6,7 +6,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.0.1"
+#define PLUGIN_VERSION "2.0.2"
 #define HUD_DISPLAY_TIME 15.0
 #define HUD_FADE_IN 0.1
 #define HUD_FADE_OUT 0.2
@@ -240,6 +240,7 @@ public Action CMD_StopGiveaway(int client, int args) {
   }
   
   FilterParticipants();
+  AdvanceCooldowns();
   
   if (g_alParticipants.Length == 0) {
     SetupHudParams();
@@ -375,8 +376,6 @@ public Action CMD_StopGiveaway(int client, int args) {
     delete winners;
   }
   
-  AdvanceCooldowns();
-  
   g_bActiveGiveaway = false;
   g_alParticipants.Clear();
   g_iGiveawayCreator = 0;
@@ -387,12 +386,12 @@ public Action CMD_StopGiveaway(int client, int args) {
 }
 
 public Action CMD_CancelGiveaway(int client, int args) {
-  if (!Forward_OnGiveawayCancel(GetClientOfUserId(g_iGiveawayCreator), client)) {
+  if (!g_bActiveGiveaway) {
+    MC_ReplyToCommand(client, "%T", "GiveawayNone", client);
     return Plugin_Handled;
   }
   
-  if (!g_bActiveGiveaway) {
-    MC_ReplyToCommand(client, "%T", "GiveawayNone", client);
+  if (!Forward_OnGiveawayCancel(GetClientOfUserId(g_iGiveawayCreator), client)) {
     return Plugin_Handled;
   }
   
@@ -749,9 +748,9 @@ void AdvanceCooldowns() {
 }
 
 void FilterParticipants() {
-  for (int i = 0; i < g_alParticipants.Length; i++) {
+  for (int i = g_alParticipants.Length - 1; i >= 0; i--) {
     int cl = GetClientOfUserId(g_alParticipants.Get(i));
-    if (!CanParticipate(cl)) {
+    if (cl == 0 || !CanParticipate(cl)) {
       g_alParticipants.Erase(i);
     }
   }
@@ -760,13 +759,7 @@ void FilterParticipants() {
 bool CanParticipate(int client) {
   char steamid[32];
   GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid));
-  
-  int passed;
-  if (g_smPastWinners.GetValue(steamid, passed)) {
-    return passed >= g_cvWinnerCooldown.IntValue;
-  }
-  
-  return true;
+  return !g_smPastWinners.ContainsKey(steamid);
 }
 
 /* Forwards */
