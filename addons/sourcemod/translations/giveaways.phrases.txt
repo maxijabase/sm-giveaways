@@ -255,4 +255,28 @@
 		"es" "Salir"
 		"ru" "Выход"
 	}
+	"GiveawayStarting_Center_Bundle"
+	{
+		"#format" "{1:d},{2:d}"
+		"en" "BUNDLE GIVEAWAY: {1} PRIZES FOR 1 WINNER!\nTYPE !enter!\nENDS IN {2}..."
+		"es" "¡SORTEO BUNDLE: {1} PREMIOS PARA 1 GANADOR!\n¡Escribí !enter!\nTERMINA EN {2}..."
+	}
+	"GiveawayStarting_Chat_Bundle"
+	{
+		"#format" "{1:d},{2:d}"
+		"en" "{yellow}[Giveaways!] {orange}BUNDLE GIVEAWAY WITH {1} PRIZES FOR 1 WINNER JUST STARTED!{default} It will end in {orange}{2}{default} seconds. Type {orange}!enter{default} to participate!"
+		"es" "{yellow}[Sorteos] {orange}¡EMPEZÓ UN SORTEO BUNDLE CON {1} PREMIOS PARA 1 GANADOR!{default} Termina en {orange}{2}{default} segundos. ¡Escribí {orange}!enter{default} para participar!"
+	}
+	"GiveawayWinnerAnnouncement_Center_Bundle"
+	{
+		"#format" "{1:N},{2:d}"
+		"en" "{1} WON A BUNDLE OF {2} PRIZES!"
+		"es" "¡{1} GANÓ UN BUNDLE DE {2} PREMIOS!"
+	}
+	"GiveawayWinnerAnnouncement_Chat_Bundle_Header"
+	{
+		"#format" "{1:N},{2:d}"
+		"en" "{yellow}[Giveaways!]{default} {yellow}{1}{default} WON A BUNDLE OF {yellow}{2}{default} PRIZES:"
+		"es" "{yellow}[Sorteos]{default} {yellow}{1}{default} GANÓ UN BUNDLE DE {yellow}{2}{default} PREMIOS:"
+	}
 }
